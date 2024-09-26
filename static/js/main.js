@@ -9,7 +9,6 @@ let beepSound = document.getElementById('beep-sound');
 let listContainer = document.getElementById('list-container');
 let isListVisible = false;
 let isPaused = false;
-let scannedScooters = new Set(); // To track scanned scooters
 
 console.debug("Variables initialized.");
 
@@ -32,38 +31,6 @@ qrScanner.start().catch(error => {
 function processScannedData(scooterId) {
     console.debug("Processing scanned data:", scooterId);
 
-    // Check for duplicates
-    if (scannedScooters.has(scooterId)) {
-        console.debug("Duplicate scooter ID detected:", scooterId);
-        // Flash red overlay
-        overlay.style.backgroundColor = 'red';
-        overlay.style.opacity = '0.7';
-        setTimeout(() => {
-            overlay.style.opacity = '0';
-        }, 300);
-        // Do not play beep or add to list
-        return;
-    } else {
-        scannedScooters.add(scooterId);
-    }
-
-    // Play beep sound
-    beepSound.play();
-
-    // Flash green overlay
-    overlay.style.backgroundColor = 'green';
-    overlay.style.opacity = '0.7';
-    setTimeout(() => {
-        overlay.style.opacity = '0';
-    }, 300);
-
-    // Display scanned scooter ID
-    scannedScooterIdDiv.textContent = scooterId;
-    scannedScooterIdDiv.style.display = 'block';
-    setTimeout(() => {
-        scannedScooterIdDiv.style.display = 'none';
-    }, 5000);
-
     // Add to list
     fetch('/save_scan', {
         method: 'POST',
@@ -74,6 +41,23 @@ function processScannedData(scooterId) {
     .then(data => {
         console.debug("Response from save_scan:", data);
         if (data.status === 'success') {
+            // Play beep sound
+            beepSound.play();
+
+            // Flash green overlay
+            overlay.style.backgroundColor = 'green';
+            overlay.style.opacity = '0.7';
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+            }, 300);
+
+            // Display scanned scooter ID
+            scannedScooterIdDiv.textContent = scooterId;
+            scannedScooterIdDiv.style.display = 'block';
+            setTimeout(() => {
+                scannedScooterIdDiv.style.display = 'none';
+            }, 5000);
+
             let listItem = document.createElement('li');
             let timestamp = new Date();
             let formattedTime = timestamp.getHours().toString().padStart(2, '0') + ':' +
@@ -82,6 +66,15 @@ function processScannedData(scooterId) {
             listItem.textContent = `${scooterId} - ${formattedTime}`;
             scooterList.insertBefore(listItem, scooterList.firstChild);
             totalScootersSpan.textContent = data.total;
+        } else if (data.status === 'duplicate') {
+            console.debug("Duplicate scooter ID detected:", scooterId);
+            // Flash red overlay
+            overlay.style.backgroundColor = 'red';
+            overlay.style.opacity = '0.7';
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+            }, 300);
+            // Do not play beep or add to list
         } else {
             console.debug("Error: Unable to save scan data.");
         }
@@ -125,21 +118,7 @@ document.getElementById('pause-btn').addEventListener('click', () => {
         console.debug("Scanning paused.");
     }
     isPaused = !isPaused;
-    toggleListVisibility();
 });
-
-function toggleListVisibility() {
-    if (isListVisible) {
-        listContainer.style.display = 'none';
-        adjustCameraSize();
-        console.debug("List container hidden.");
-    } else {
-        listContainer.style.display = 'block';
-        adjustCameraSize();
-        console.debug("List container shown.");
-    }
-    isListVisible = !isListVisible;
-}
 
 // Adjust camera size based on screen height
 function adjustCameraSize() {

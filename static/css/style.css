@@ -7,8 +7,8 @@ body {
     text-align: center;
     background-color: #000f3c;
     font-weight: bold;
-    color: white; /* Ensure text is visible on dark background */
-    overflow: hidden; /* Prevent scrolling */
+    color: white;
+    overflow: hidden;
 }
 
 h1, h2, p, button, input, label {
@@ -55,13 +55,13 @@ h1, h2, p, button, input, label {
 #list-name-overlay {
     position: absolute;
     top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 10px;
     color: white;
     font-size: 24px;
     background-color: rgba(0,0,0,0.5);
     padding: 5px 15px;
     border-radius: 30px;
+    z-index: 2;
 }
 
 #pause-btn {
@@ -76,6 +76,7 @@ h1, h2, p, button, input, label {
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
+    z-index: 2;
 }
 
 #button-container {
@@ -94,10 +95,11 @@ h1, h2, p, button, input, label {
     bottom: 0;
     width: 100%;
     max-height: 50vh;
-    background-color: #000f3c; /* Match background color */
+    background-color: #000f3c;
     overflow-y: auto;
     border-top: 1px solid #ccc;
     color: white;
+    z-index: 1;
 }
 
 #scooter-list {
@@ -107,7 +109,7 @@ h1, h2, p, button, input, label {
 
 #scooter-list li {
     padding: 10px;
-    border-bottom: 1px solid #69d2aa; /* Use button color for consistency */
+    border-bottom: 1px solid #69d2aa;
 }
 
 button {
@@ -148,4 +150,3 @@ h1, h2, p {
         max-height: 40vh;
     }
 }
-

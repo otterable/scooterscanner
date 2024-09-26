@@ -17,9 +17,10 @@
     <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Tier Scooter Scanner Logo" width="200">
     <h1>Tier Scooter Scanner</h1>
     <button id="create-list-btn">Create New List</button>
+    <button id="view-lists-btn">View Lists</button>
 
     <!-- Save as PWA Button -->
-    <button id="save-pwa-btn">Save as PWA</button>
+    <button id="save-pwa-btn" style="display: none;">Save as PWA</button>
 
     <!-- Form to submit list name and warehouse name -->
     <form id="list-form" action="{{ url_for('scan') }}" method="post" style="display:none;">
@@ -48,6 +49,10 @@
             } else {
                 console.debug("List name not entered.");
             }
+        });
+
+        document.getElementById('view-lists-btn').addEventListener('click', function() {
+            window.location.href = '/lists';
         });
 
         // Install PWA
