@@ -12,13 +12,12 @@
     <p>Warehouse: {{ list.warehouse }}</p>
     <p>Date: {{ list.timestamp.strftime('%d.%m.%Y %H:%M') }}</p>
     <p>Total Scooters: {{ scans|length }}</p>
-<div id="button-container">
-    <button onclick="window.location.href='/lists'">Return</button>
-    <button onclick="exportList()">Export to .xlsx</button>
-    <button onclick="deleteList()">Delete List</button>
-    <button onclick="continueScanning()">Continue Scanning</button>
-</div>
-
+    <div id="button-container">
+        <button onclick="window.location.href='/lists'">Return</button>
+        <button onclick="exportList()">Export to .xlsx</button>
+        <button onclick="deleteList()">Delete List</button>
+        <button onclick="continueScanning()">Continue Scanning</button>
+    </div>
     <ul id="scooter-list">
         {% for scan in scans %}
         <li>
@@ -29,45 +28,56 @@
         <li>No scooters scanned.</li>
         {% endfor %}
     </ul>
-
     <script>
+        console.debug("View List page loaded.");
+        console.debug("List ID: {{ list.id }}");
+        console.debug("Total scans displayed: {{ scans|length }}");
+
         function exportList() {
+            console.debug("Export button clicked for list {{ list.id }}.");
             window.location.href = '/export/{{ list.id }}';
         }
         function deleteList() {
+            console.debug("Delete List button clicked.");
             if (confirm('Are you sure you want to delete this list? This action cannot be undone.')) {
                 fetch('/delete_list/{{ list.id }}', { method: 'POST' })
                 .then(response => {
                     if (response.ok) {
+                        console.debug("List deleted successfully.");
                         window.location.href = '/lists';
                     } else {
+                        console.debug("Error deleting list.");
                         alert('Error deleting list.');
                     }
                 });
             }
         }
-    function continueScanning() {
-        let form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/scan';
+        function continueScanning() {
+            console.debug("Continue Scanning button clicked.");
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/scan';
 
-        let listIdInput = document.createElement('input');
-        listIdInput.type = 'hidden';
-        listIdInput.name = 'list_id';
-        listIdInput.value = '{{ list.id }}';
+            let listIdInput = document.createElement('input');
+            listIdInput.type = 'hidden';
+            listIdInput.name = 'list_id';
+            listIdInput.value = '{{ list.id }}';
 
-        form.appendChild(listIdInput);
-        document.body.appendChild(form);
-        form.submit();
-    }
+            form.appendChild(listIdInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
         function deleteScan(scanId, scooterId) {
+            console.debug(`Delete ID button clicked for scan ${scanId}, Scooter ID: ${scooterId}`);
             if (confirm(`Are you sure you want to delete ID ${scooterId}?`)) {
                 fetch(`/delete_scan/${scanId}`, { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
+                        console.debug(`Scan ${scanId} deleted successfully.`);
                         location.reload();
                     } else {
+                        console.debug(`Error deleting scan ${scanId}.`);
                         alert('Error deleting scooter ID.');
                     }
                 });

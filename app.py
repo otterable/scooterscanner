@@ -37,8 +37,10 @@ def index():
 @app.route('/scan', methods=['GET', 'POST'])
 def scan():
     if request.method == 'POST':
+        logging.debug("Received POST request at /scan.")
         list_id = request.form.get('list_id')
         if list_id:
+            logging.debug(f"List ID received: {list_id}")
             # Continue scanning existing list
             current_list = List.query.get(list_id)
             if current_list:
@@ -48,9 +50,11 @@ def scan():
                 logging.debug(f"List ID {list_id} not found.")
                 return redirect(url_for('index'))
         else:
+            logging.debug("No list ID received, creating new list.")
             # Create new list
-            list_name = request.form['list_name']
-            warehouse_name = request.form['warehouse_name']
+            list_name = request.form.get('list_name')
+            warehouse_name = request.form.get('warehouse_name')
+            logging.debug(f"List name: {list_name}, Warehouse name: {warehouse_name}")
             new_list = List(name=list_name, warehouse=warehouse_name)
             db.session.add(new_list)
             db.session.commit()
@@ -60,16 +64,17 @@ def scan():
         logging.debug("GET request received at /scan, redirecting to index.")
         return redirect(url_for('index'))
 
-
 @app.route('/save_scan', methods=['POST'])
 def save_scan():
     data = request.get_json()
     logging.debug(f"Received scan data: {data}")
-    session_id = data['session_id']
-    scooter_id = data['scooter_id']
+    session_id = data.get('session_id')
+    scooter_id = data.get('scooter_id')
+    logging.debug(f"Session ID: {session_id}, Scooter ID: {scooter_id}")
     # Check if list exists
     current_list = List.query.get(session_id)
     if current_list:
+        logging.debug(f"List found: {current_list.id}")
         # Check for duplicates within the list
         existing_scan = Scan.query.filter_by(list_id=session_id, scooter_id=scooter_id).first()
         if existing_scan:
@@ -92,6 +97,7 @@ def export(list_id):
     logging.debug(f"Exporting data for list {list_id}.")
     current_list = List.query.get(list_id)
     if current_list:
+        logging.debug(f"List found: {current_list.id}")
         scans = Scan.query.filter_by(list_id=list_id).all()
         data = [{'Scooter ID': scan.scooter_id, 'Timestamp': scan.timestamp.strftime('%H:%M | %d.%m.%Y')} for scan in scans]
         df = pd.DataFrame(data)
@@ -100,46 +106,56 @@ def export(list_id):
             df.to_excel(writer, index=False)
         output.seek(0)
         filename = f'{current_list.name}_{current_list.warehouse}_{current_list.timestamp.strftime("%Y%m%d%H%M%S")}.xlsx'
-        logging.debug(f"Data exported successfully for list {list_id}.")
+        logging.debug(f"Data exported successfully for list {list_id}. Filename: {filename}")
         return send_file(output, download_name=filename, as_attachment=True)
     else:
         logging.debug(f"No data found for list {list_id}.")
         return 'No data found for this list.'
 
-
 @app.route('/lists')
 def list_lists():
+    logging.debug("Fetching all lists.")
     all_lists = List.query.order_by(List.timestamp.desc()).all()
+    logging.debug(f"Total lists found: {len(all_lists)}")
     return render_template('lists.html', lists=all_lists)
 
 @app.route('/list/<int:list_id>')
 def view_list(list_id):
+    logging.debug(f"Viewing list {list_id}.")
     current_list = List.query.get(list_id)
     if current_list:
+        logging.debug(f"List found: {current_list.id}")
         scans = Scan.query.filter_by(list_id=list_id).order_by(Scan.timestamp.desc()).all()
+        logging.debug(f"Total scans in list: {len(scans)}")
         return render_template('view_list.html', list=current_list, scans=scans)
     else:
+        logging.debug(f"List {list_id} not found.")
         return 'List not found', 404
 
 @app.route('/delete_list/<int:list_id>', methods=['POST'])
 def delete_list(list_id):
+    logging.debug(f"Deleting list {list_id}.")
     current_list = List.query.get(list_id)
     if current_list:
         db.session.delete(current_list)
         db.session.commit()
+        logging.debug(f"List {list_id} deleted successfully.")
         return '', 200
     else:
+        logging.debug(f"List {list_id} not found.")
         return 'List not found', 404
 
 @app.route('/delete_scan/<int:scan_id>', methods=['POST'])
 def delete_scan(scan_id):
+    logging.debug(f"Deleting scan {scan_id}.")
     scan = Scan.query.get(scan_id)
     if scan:
-        list_id = scan.list_id
         db.session.delete(scan)
         db.session.commit()
+        logging.debug(f"Scan {scan_id} deleted successfully.")
         return jsonify({'status': 'success'})
     else:
+        logging.debug(f"Scan {scan_id} not found.")
         return jsonify({'status': 'error'})
 
 # Route to serve sw.js
@@ -150,7 +166,9 @@ def sw():
 
 # Initialize the database
 with app.app_context():
+    logging.debug("Initializing database.")
     db.create_all()
+    logging.debug("Database initialized.")
 
 if __name__ == '__main__':
     app.run(debug=True)

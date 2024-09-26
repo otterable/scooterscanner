@@ -23,7 +23,9 @@ const qrScanner = new QrScanner(
 );
 
 console.debug("Starting QR Scanner.");
-qrScanner.start().catch(error => {
+qrScanner.start().then(() => {
+    console.debug("QR Scanner started successfully.");
+}).catch(error => {
     console.debug("Error starting QR Scanner:", error);
 });
 
@@ -66,9 +68,15 @@ function processScannedData(scooterId) {
             listItem.textContent = `${scooterId} - ${formattedTime}`;
             scooterList.insertBefore(listItem, scooterList.firstChild);
             totalScootersSpan.textContent = data.total;
+            console.debug(`Scooter ID ${scooterId} added to list. Total scooters: ${data.total}`);
         } else if (data.status === 'duplicate') {
             console.debug("Duplicate scooter ID detected:", scooterId);
             // Do not flash red or play beep
+            scannedScooterIdDiv.textContent = "Duplicate ID: " + scooterId;
+            scannedScooterIdDiv.style.display = 'block';
+            setTimeout(() => {
+                scannedScooterIdDiv.style.display = 'none';
+            }, 5000);
         } else {
             console.debug("Error: Unable to save scan data.");
         }
@@ -138,6 +146,7 @@ function adjustCameraSize() {
     const buttonContainerHeight = document.getElementById('button-container').offsetHeight;
     const desiredCameraHeight = availableHeight - buttonContainerHeight;
     document.getElementById('camera-container').style.height = desiredCameraHeight + 'px';
+    console.debug("Camera size adjusted.");
 }
 
 // Initial adjustment
@@ -150,6 +159,7 @@ window.addEventListener('resize', adjustCameraSize);
 let deferredPrompt;
 const savePwaBtn = document.getElementById('save-pwa-btn');
 if (savePwaBtn) {
+    console.debug("Save PWA button found.");
     window.addEventListener('beforeinstallprompt', (e) => {
         console.debug("beforeinstallprompt event fired.");
         e.preventDefault();

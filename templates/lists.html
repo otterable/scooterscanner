@@ -19,5 +19,9 @@
         {% endfor %}
     </ul>
     <button onclick="window.location.href='/'">Return</button>
+    <script>
+        console.debug("Lists page loaded.");
+        console.debug("Total lists displayed: {{ lists|length }}");
+    </script>
 </body>
 </html>

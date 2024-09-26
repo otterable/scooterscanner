@@ -20,7 +20,7 @@
     <button id="view-lists-btn">View Lists</button>
 
     <!-- Save as PWA Button -->
-=<button id="save-pwa-btn">Download App</button>
+    <button id="save-pwa-btn">Download App</button>
 
     <!-- Form to submit list name and warehouse name -->
     <form id="list-form" action="{{ url_for('scan') }}" method="post" style="display:none;">
@@ -52,55 +52,56 @@
         });
 
         document.getElementById('view-lists-btn').addEventListener('click', function() {
+            console.debug("View Lists button clicked.");
             window.location.href = '/lists';
         });
 
-         // Install PWA
-    let deferredPrompt;
-    const savePwaBtn = document.getElementById('save-pwa-btn');
+        // Install PWA
+        let deferredPrompt;
+        const savePwaBtn = document.getElementById('save-pwa-btn');
 
-    // Always display the button
-    savePwaBtn.style.display = 'block';
+        // Always display the button
+        savePwaBtn.style.display = 'block';
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        console.debug("beforeinstallprompt event fired.");
-        e.preventDefault();
-        deferredPrompt = e;
-    });
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.debug("beforeinstallprompt event fired.");
+            e.preventDefault();
+            deferredPrompt = e;
+        });
 
-    savePwaBtn.addEventListener('click', () => {
-        console.debug("Save as PWA button clicked.");
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.debug('User accepted the install prompt');
-                } else {
-                    console.debug('User dismissed the install prompt');
-                }
-                deferredPrompt = null;
-                // Optionally hide the button after installation
-                // savePwaBtn.style.display = 'none';
+        savePwaBtn.addEventListener('click', () => {
+            console.debug("Save as PWA button clicked.");
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.debug('User accepted the install prompt');
+                    } else {
+                        console.debug('User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                    // Optionally hide the button after installation
+                    // savePwaBtn.style.display = 'none';
+                });
+            } else {
+                // Provide manual installation instructions
+                alert('To install this app, please use your browser\'s "Add to Home Screen" feature.');
+                console.debug("Provided manual installation instructions.");
+            }
+        });
+    </script>
+    <!-- Service Worker Registration -->
+    <script>
+        console.debug("Registering service worker.");
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("/sw.js").then(function(registration) {
+                console.debug('ServiceWorker registration successful with scope: ', registration.scope);
+            }).catch(function(err) {
+                console.debug('ServiceWorker registration failed: ', err);
             });
         } else {
-            // Provide manual installation instructions
-            alert('To install this app, please use your browser\'s "Add to Home Screen" feature.');
+            console.debug("Service workers are not supported.");
         }
-    });
     </script>
-  <!-- Service Worker Registration -->
-<script>
-    console.debug("Registering service worker.");
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register("/sw.js").then(function(registration) {
-            console.debug('ServiceWorker registration successful with scope: ', registration.scope);
-        }, function(err) {
-            console.debug('ServiceWorker registration failed: ', err);
-        });
-    } else {
-        console.debug("Service workers are not supported.");
-    }
-</script>
-
 </body>
 </html>
