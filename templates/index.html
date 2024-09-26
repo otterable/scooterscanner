@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tier Scooter Scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Tier Scooter Scanner Logo" width="200">
+    <h1>Tier Scooter Scanner</h1>
+    <button id="create-list-btn">Create New List</button>
+
+    <!-- Form to submit list name and warehouse name -->
+    <form id="list-form" action="{{ url_for('scan') }}" method="post" style="display:none;">
+        <input type="hidden" name="list_name" id="list_name">
+        <input type="hidden" name="warehouse_name" id="warehouse_name">
+    </form>
+
+    <!-- JavaScript -->
+    <script>
+        console.debug("Index page loaded.");
+        document.getElementById('create-list-btn').addEventListener('click', function() {
+            console.debug("Create New List button clicked.");
+            let listName = prompt("Enter list name:");
+            console.debug("List name entered:", listName);
+            if (listName) {
+                let warehouseName = prompt("Enter Warehouse name:");
+                console.debug("Warehouse name entered:", warehouseName);
+                if (warehouseName) {
+                    document.getElementById('list_name').value = listName;
+                    document.getElementById('warehouse_name').value = warehouseName;
+                    console.debug("Submitting form with list name and warehouse name.");
+                    document.getElementById('list-form').submit();
+                } else {
+                    console.debug("Warehouse name not entered.");
+                }
+            } else {
+                console.debug("List name not entered.");
+            }
+        });
+    </script>
+    <!-- Service Worker Registration -->
+    <script>
+        console.debug("Registering service worker.");
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register("{{ url_for('sw') }}").then(function(registration) {
+                    console.debug('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function(err) {
+                    console.debug('ServiceWorker registration failed: ', err);
+                });
+            });
+        } else {
+            console.debug("Service workers are not supported.");
+        }
+    </script>
+</body>
+</html>

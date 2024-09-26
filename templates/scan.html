@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ list_name }} - Scanning</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div id="camera-container">
+        <video id="video" autoplay></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div id="overlay"></div>
+        <div id="scanned-scooter-id"></div>
+    </div>
+    <button id="toggle-list-btn">Toggle List</button>
+    <button id="finish-list-btn">Finish List</button>
+    <div id="list-container" style="display:none;">
+        <h2>List: {{ list_name }}</h2>
+        <p>Total Scooters: <span id="total-scooters">0</span></p>
+        <button id="export-btn">Export to .xlsx</button>
+        <ul id="scooter-list"></ul>
+    </div>
+
+    <!-- Audio -->
+    <audio id="beep-sound" src="{{ url_for('static', filename='audio/beep.mp3') }}"></audio>
+
+    <!-- JavaScript -->
+    <script>
+        console.debug("Scan page loaded.");
+        const sessionId = '{{ session_id }}';
+        console.debug("Session ID:", sessionId);
+    </script>
+    <!-- Include the UMD version of qr-scanner -->
+ <!-- Remove the line setting QrScanner.WORKER_PATH -->
+<script src="{{ url_for('static', filename='js/qr-scanner.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        console.debug("Registering service worker.");
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register("{{ url_for('sw') }}").then(function(registration) {
+                    console.debug('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function(err) {
+                    console.debug('ServiceWorker registration failed: ', err);
+                });
+            });
+        } else {
+            console.debug("Service workers are not supported.");
+        }
+    </script>
+</body>
+</html>
