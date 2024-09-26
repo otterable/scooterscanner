@@ -7,9 +7,10 @@ body {
     text-align: center;
     background-color: #000f3c;
     font-weight: bold;
-    color: white;
+    color: white; /* Set text color to white */
     overflow: hidden;
 }
+
 
 h1, h2, p, button, input, label {
     font-weight: bold;
