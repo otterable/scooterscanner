@@ -1,3 +1,4 @@
+import os
 import logging
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
 import io
@@ -5,10 +6,13 @@ import pandas as pd
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 
+# Get the absolute path of the directory where app.py is located
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 app = Flask(__name__)
 
 # Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///scooters.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'scooters.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -28,7 +32,6 @@ class Scan(db.Model):
     scooter_id = db.Column(db.String(100))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     list_id = db.Column(db.Integer, db.ForeignKey('list.id'), nullable=False)
-
 @app.route('/')
 def index():
     logging.debug("Rendering index page.")
