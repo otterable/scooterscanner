@@ -82,6 +82,7 @@ h1, h2, p, button, input, label {
 
 #button-container {
     display: flex;
+    flex-wrap: wrap; /* Allow buttons to wrap */
     justify-content: center;
     align-items: center;
     margin: 5px;
@@ -89,6 +90,15 @@ h1, h2, p, button, input, label {
 
 #button-container button {
     margin: 5px;
+    flex: 1 1 45%; /* Adjust width to fit two buttons per row */
+    max-width: 200px; /* Set a maximum width for buttons */
+}
+
+/* Add media query for very small screens */
+@media (max-width: 400px) {
+    #button-container button {
+        flex: 1 1 100%; /* Buttons take full width on very small screens */
+    }
 }
 
 #list-container {

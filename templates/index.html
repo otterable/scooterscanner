@@ -20,7 +20,7 @@
     <button id="view-lists-btn">View Lists</button>
 
     <!-- Save as PWA Button -->
-    <button id="save-pwa-btn" style="display: none;">Save as PWA</button>
+=<button id="save-pwa-btn">Download App</button>
 
     <!-- Form to submit list name and warehouse name -->
     <form id="list-form" action="{{ url_for('scan') }}" method="post" style="display:none;">
@@ -55,32 +55,38 @@
             window.location.href = '/lists';
         });
 
-        // Install PWA
-        let deferredPrompt;
-        const savePwaBtn = document.getElementById('save-pwa-btn');
+         // Install PWA
+    let deferredPrompt;
+    const savePwaBtn = document.getElementById('save-pwa-btn');
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.debug("beforeinstallprompt event fired.");
-            e.preventDefault();
-            deferredPrompt = e;
-            savePwaBtn.style.display = 'block';
-        });
+    // Always display the button
+    savePwaBtn.style.display = 'block';
 
-        savePwaBtn.addEventListener('click', () => {
-            console.debug("Save as PWA button clicked.");
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.debug('User accepted the install prompt');
-                    } else {
-                        console.debug('User dismissed the install prompt');
-                    }
-                    deferredPrompt = null;
-                    savePwaBtn.style.display = 'none';
-                });
-            }
-        });
+    window.addEventListener('beforeinstallprompt', (e) => {
+        console.debug("beforeinstallprompt event fired.");
+        e.preventDefault();
+        deferredPrompt = e;
+    });
+
+    savePwaBtn.addEventListener('click', () => {
+        console.debug("Save as PWA button clicked.");
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.debug('User accepted the install prompt');
+                } else {
+                    console.debug('User dismissed the install prompt');
+                }
+                deferredPrompt = null;
+                // Optionally hide the button after installation
+                // savePwaBtn.style.display = 'none';
+            });
+        } else {
+            // Provide manual installation instructions
+            alert('To install this app, please use your browser\'s "Add to Home Screen" feature.');
+        }
+    });
     </script>
     <!-- Service Worker Registration -->
     <script>

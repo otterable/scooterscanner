@@ -12,12 +12,13 @@
     <p>Warehouse: {{ list.warehouse }}</p>
     <p>Date: {{ list.timestamp.strftime('%d.%m.%Y %H:%M') }}</p>
     <p>Total Scooters: {{ scans|length }}</p>
-    <div id="button-container">
-        <button onclick="window.location.href='/lists'">Return</button>
-        <button onclick="exportList()">Export to .xlsx</button>
-        <button onclick="deleteList()">Delete List</button>
-        <button onclick="continueScanning()">Continue Scanning</button>
-    </div>
+<div id="button-container">
+    <button onclick="window.location.href='/lists'">Return</button>
+    <button onclick="exportList()">Export to .xlsx</button>
+    <button onclick="deleteList()">Delete List</button>
+    <button onclick="continueScanning()">Continue Scanning</button>
+</div>
+
     <ul id="scooter-list">
         {% for scan in scans %}
         <li>
@@ -45,20 +46,20 @@
                 });
             }
         }
-        function continueScanning() {
-            let form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/scan';
+    function continueScanning() {
+        let form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/scan';
 
-            let listIdInput = document.createElement('input');
-            listIdInput.type = 'hidden';
-            listIdInput.name = 'list_id';
-            listIdInput.value = '{{ list.id }}';
+        let listIdInput = document.createElement('input');
+        listIdInput.type = 'hidden';
+        listIdInput.name = 'list_id';
+        listIdInput.value = '{{ list.id }}';
 
-            form.appendChild(listIdInput);
-            document.body.appendChild(form);
-            form.submit();
-        }
+        form.appendChild(listIdInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
         function deleteScan(scanId, scooterId) {
             if (confirm(`Are you sure you want to delete ID ${scooterId}?`)) {
                 fetch(`/delete_scan/${scanId}`, { method: 'POST' })

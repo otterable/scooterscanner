@@ -37,10 +37,7 @@ def index():
 @app.route('/scan', methods=['GET', 'POST'])
 def scan():
     if request.method == 'POST':
-        list_name = request.form['list_name']
-        warehouse_name = request.form['warehouse_name']
         list_id = request.form.get('list_id')
-
         if list_id:
             # Continue scanning existing list
             current_list = List.query.get(list_id)
@@ -52,6 +49,8 @@ def scan():
                 return redirect(url_for('index'))
         else:
             # Create new list
+            list_name = request.form['list_name']
+            warehouse_name = request.form['warehouse_name']
             new_list = List(name=list_name, warehouse=warehouse_name)
             db.session.add(new_list)
             db.session.commit()
@@ -60,6 +59,7 @@ def scan():
     else:
         logging.debug("GET request received at /scan, redirecting to index.")
         return redirect(url_for('index'))
+
 
 @app.route('/save_scan', methods=['POST'])
 def save_scan():
@@ -101,10 +101,11 @@ def export(list_id):
         output.seek(0)
         filename = f'{current_list.name}_{current_list.warehouse}_{current_list.timestamp.strftime("%Y%m%d%H%M%S")}.xlsx'
         logging.debug(f"Data exported successfully for list {list_id}.")
-        return send_file(output, attachment_filename=filename, as_attachment=True)
+        return send_file(output, download_name=filename, as_attachment=True)
     else:
         logging.debug(f"No data found for list {list_id}.")
         return 'No data found for this list.'
+
 
 @app.route('/lists')
 def list_lists():
