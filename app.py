@@ -39,12 +39,24 @@ def scan():
     if request.method == 'POST':
         list_name = request.form['list_name']
         warehouse_name = request.form['warehouse_name']
-        # Create new list in the database
-        new_list = List(name=list_name, warehouse=warehouse_name)
-        db.session.add(new_list)
-        db.session.commit()
-        logging.debug(f"New scanning session created: {new_list.id}")
-        return render_template('scan.html', session_id=new_list.id, list_name=list_name)
+        list_id = request.form.get('list_id')
+
+        if list_id:
+            # Continue scanning existing list
+            current_list = List.query.get(list_id)
+            if current_list:
+                logging.debug(f"Continuing scanning session: {list_id}")
+                return render_template('scan.html', session_id=list_id, list_name=current_list.name)
+            else:
+                logging.debug(f"List ID {list_id} not found.")
+                return redirect(url_for('index'))
+        else:
+            # Create new list
+            new_list = List(name=list_name, warehouse=warehouse_name)
+            db.session.add(new_list)
+            db.session.commit()
+            logging.debug(f"New scanning session created: {new_list.id}")
+            return render_template('scan.html', session_id=new_list.id, list_name=list_name)
     else:
         logging.debug("GET request received at /scan, redirecting to index.")
         return redirect(url_for('index'))
@@ -117,6 +129,17 @@ def delete_list(list_id):
         return '', 200
     else:
         return 'List not found', 404
+
+@app.route('/delete_scan/<int:scan_id>', methods=['POST'])
+def delete_scan(scan_id):
+    scan = Scan.query.get(scan_id)
+    if scan:
+        list_id = scan.list_id
+        db.session.delete(scan)
+        db.session.commit()
+        return jsonify({'status': 'success'})
+    else:
+        return jsonify({'status': 'error'})
 
 # Route to serve sw.js
 @app.route('/sw.js')

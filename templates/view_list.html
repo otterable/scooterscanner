@@ -16,10 +16,14 @@
         <button onclick="window.location.href='/lists'">Return</button>
         <button onclick="exportList()">Export to .xlsx</button>
         <button onclick="deleteList()">Delete List</button>
+        <button onclick="continueScanning()">Continue Scanning</button>
     </div>
     <ul id="scooter-list">
         {% for scan in scans %}
-        <li>{{ scan.scooter_id }} - {{ scan.timestamp.strftime('%H:%M | %d.%m.%Y') }}</li>
+        <li>
+            {{ scan.scooter_id }} - {{ scan.timestamp.strftime('%H:%M | %d.%m.%Y') }}
+            <button onclick="deleteScan({{ scan.id }}, '{{ scan.scooter_id }}')">Delete ID</button>
+        </li>
         {% else %}
         <li>No scooters scanned.</li>
         {% endfor %}
@@ -37,6 +41,33 @@
                         window.location.href = '/lists';
                     } else {
                         alert('Error deleting list.');
+                    }
+                });
+            }
+        }
+        function continueScanning() {
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/scan';
+
+            let listIdInput = document.createElement('input');
+            listIdInput.type = 'hidden';
+            listIdInput.name = 'list_id';
+            listIdInput.value = '{{ list.id }}';
+
+            form.appendChild(listIdInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+        function deleteScan(scanId, scooterId) {
+            if (confirm(`Are you sure you want to delete ID ${scooterId}?`)) {
+                fetch(`/delete_scan/${scanId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error deleting scooter ID.');
                     }
                 });
             }

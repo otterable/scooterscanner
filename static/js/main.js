@@ -68,13 +68,7 @@ function processScannedData(scooterId) {
             totalScootersSpan.textContent = data.total;
         } else if (data.status === 'duplicate') {
             console.debug("Duplicate scooter ID detected:", scooterId);
-            // Flash red overlay
-            overlay.style.backgroundColor = 'red';
-            overlay.style.opacity = '0.7';
-            setTimeout(() => {
-                overlay.style.opacity = '0';
-            }, 300);
-            // Do not play beep or add to list
+            // Do not flash red or play beep
         } else {
             console.debug("Error: Unable to save scan data.");
         }
@@ -90,12 +84,30 @@ document.getElementById('toggle-list-btn').addEventListener('click', () => {
     toggleListVisibility();
 });
 
+function toggleListVisibility() {
+    if (isListVisible) {
+        listContainer.style.display = 'none';
+        document.getElementById('camera-container').style.display = 'block';
+        console.debug("List container hidden, camera shown.");
+    } else {
+        listContainer.style.display = 'block';
+        document.getElementById('camera-container').style.display = 'none';
+        console.debug("List container shown, camera hidden.");
+    }
+    isListVisible = !isListVisible;
+}
+
 // Finish list
 document.getElementById('finish-list-btn').addEventListener('click', () => {
     console.debug("Finish List button clicked.");
-    qrScanner.stop();
-    console.debug("QR Scanner stopped.");
-    window.location.href = '/';
+    if (confirm('Are you sure you want to finish the list?')) {
+        qrScanner.stop();
+        console.debug("QR Scanner stopped.");
+        alert(`List "${listName}" saved at ${new Date().toLocaleString()} with ${totalScootersSpan.textContent} scooters.`);
+        window.location.href = '/';
+    } else {
+        console.debug("Finish list canceled.");
+    }
 });
 
 // Export list
