@@ -18,6 +18,9 @@
     <h1>Tier Scooter Scanner</h1>
     <button id="create-list-btn">Create New List</button>
 
+    <!-- Save as PWA Button -->
+    <button id="save-pwa-btn">Save as PWA</button>
+
     <!-- Form to submit list name and warehouse name -->
     <form id="list-form" action="{{ url_for('scan') }}" method="post" style="display:none;">
         <input type="hidden" name="list_name" id="list_name">
@@ -44,6 +47,33 @@
                 }
             } else {
                 console.debug("List name not entered.");
+            }
+        });
+
+        // Install PWA
+        let deferredPrompt;
+        const savePwaBtn = document.getElementById('save-pwa-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.debug("beforeinstallprompt event fired.");
+            e.preventDefault();
+            deferredPrompt = e;
+            savePwaBtn.style.display = 'block';
+        });
+
+        savePwaBtn.addEventListener('click', () => {
+            console.debug("Save as PWA button clicked.");
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.debug('User accepted the install prompt');
+                    } else {
+                        console.debug('User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                    savePwaBtn.style.display = 'none';
+                });
             }
         });
     </script>

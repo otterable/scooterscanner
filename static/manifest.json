@@ -3,16 +3,16 @@
     "short_name": "ScooterScanner",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#FFFFFF",
-    "theme_color": "#000000",
+    "background_color": "#000f3c",
+    "theme_color": "#000f3c",
     "icons": [
         {
-            "src": "icons/icon-192x192.png",
+            "src": "icons/logo2.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "icons/icon-512x512.png",
+            "src": "icons/logo2.png",
             "sizes": "512x512",
             "type": "image/png"
         }

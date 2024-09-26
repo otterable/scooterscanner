@@ -15,13 +15,19 @@
 </head>
 <body>
     <div id="camera-container">
-        <video id="video" autoplay></video>
+        <!-- List name overlay -->
+        <div id="list-name-overlay">{{ list_name }}</div>
+        <!-- Pause button -->
+        <button id="pause-btn">Pause</button>
+        <video id="video" autoplay playsinline></video>
         <canvas id="canvas" style="display:none;"></canvas>
         <div id="overlay"></div>
         <div id="scanned-scooter-id"></div>
     </div>
-    <button id="toggle-list-btn">Toggle List</button>
-    <button id="finish-list-btn">Finish List</button>
+    <div id="button-container">
+        <button id="toggle-list-btn">Toggle List</button>
+        <button id="finish-list-btn">Finish List</button>
+    </div>
     <div id="list-container" style="display:none;">
         <h2>List: {{ list_name }}</h2>
         <p>Total Scooters: <span id="total-scooters">0</span></p>
@@ -36,13 +42,12 @@
     <script>
         console.debug("Scan page loaded.");
         const sessionId = '{{ session_id }}';
+        const listName = '{{ list_name }}';
         console.debug("Session ID:", sessionId);
     </script>
     <!-- Include the UMD version of qr-scanner -->
- <!-- Remove the line setting QrScanner.WORKER_PATH -->
-<script src="{{ url_for('static', filename='js/qr-scanner.umd.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
-
+    <script src="{{ url_for('static', filename='js/qr-scanner.umd.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <!-- Service Worker Registration -->
     <script>
         console.debug("Registering service worker.");
