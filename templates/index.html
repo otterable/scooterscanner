@@ -88,20 +88,19 @@
         }
     });
     </script>
-    <!-- Service Worker Registration -->
-    <script>
-        console.debug("Registering service worker.");
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register("{{ url_for('sw') }}").then(function(registration) {
-                    console.debug('ServiceWorker registration successful with scope: ', registration.scope);
-                }, function(err) {
-                    console.debug('ServiceWorker registration failed: ', err);
-                });
-            });
-        } else {
-            console.debug("Service workers are not supported.");
-        }
-    </script>
+  <!-- Service Worker Registration -->
+<script>
+    console.debug("Registering service worker.");
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register("/sw.js").then(function(registration) {
+            console.debug('ServiceWorker registration successful with scope: ', registration.scope);
+        }, function(err) {
+            console.debug('ServiceWorker registration failed: ', err);
+        });
+    } else {
+        console.debug("Service workers are not supported.");
+    }
+</script>
+
 </body>
 </html>
