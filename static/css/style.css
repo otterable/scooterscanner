@@ -150,3 +150,13 @@ h1, h2, p {
         max-height: 40vh;
     }
 }
+
+
+a {
+    color: inherit; /* Inherit color from parent element */
+    text-decoration: none; /* Remove underline */
+}
+
+a:hover {
+    text-decoration: underline; /* Optional: Underline on hover */
+}
