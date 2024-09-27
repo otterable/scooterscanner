@@ -16,6 +16,11 @@ h1, h2, p, button, input, label {
     font-weight: bold;
 }
 
+#scooter-list {
+    max-height: 400px; /* Adjust as needed */
+    overflow-y: auto;
+}
+
 #camera-container {
     position: relative;
     width: 100%;

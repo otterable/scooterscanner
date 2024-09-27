@@ -17,17 +17,20 @@
         <button onclick="exportList()">Export to .xlsx</button>
         <button onclick="deleteList()">Delete List</button>
         <button onclick="continueScanning()">Continue Scanning</button>
+        <button onclick="toggleURLs()">Toggle URLs</button>
     </div>
-    <ul id="scooter-list">
-        {% for scan in scans %}
-        <li>
-            {{ scan.scooter_id }} - {{ scan.timestamp.strftime('%H:%M | %d.%m.%Y') }}
-            <button onclick="deleteScan({{ scan.id }}, '{{ scan.scooter_id }}')">Delete ID</button>
-        </li>
-        {% else %}
-        <li>No scooters scanned.</li>
-        {% endfor %}
-    </ul>
+    <div id="list-container">
+        <ul id="scooter-list">
+            {% for scan in scans %}
+            <li>
+                <span class="scooter-id" data-full-id="{{ scan.scooter_id }}" data-short-id="{{ scan.scooter_id_short }}">{{ scan.scooter_id_short }}</span> - {{ scan.timestamp.strftime('%H:%M | %d.%m.%Y') }}
+                <button onclick="deleteScan({{ scan.id }}, '{{ scan.scooter_id_short }}')">Delete ID</button>
+            </li>
+            {% else %}
+            <li>No scooters scanned.</li>
+            {% endfor %}
+        </ul>
+    </div>
     <script>
         console.debug("View List page loaded.");
         console.debug("List ID: {{ list.id }}");
@@ -82,6 +85,20 @@
                     }
                 });
             }
+        }
+        function toggleURLs() {
+            console.debug("Toggle URLs button clicked.");
+            const listItems = document.querySelectorAll('#scooter-list li');
+            listItems.forEach(item => {
+                const scooterIdElement = item.querySelector('.scooter-id');
+                const fullId = scooterIdElement.dataset.fullId;
+                const shortId = scooterIdElement.dataset.shortId;
+                if (scooterIdElement.textContent === shortId) {
+                    scooterIdElement.textContent = fullId;
+                } else {
+                    scooterIdElement.textContent = shortId;
+                }
+            });
         }
     </script>
 </body>

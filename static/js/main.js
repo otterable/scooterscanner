@@ -19,7 +19,11 @@ const qrScanner = new QrScanner(
         console.debug("QR code scanned:", result);
         processScannedData(result.data); // Use result.data instead of result
     },
-    { returnDetailedScanResult: true } // Use new API
+    {
+        returnDetailedScanResult: true, // Use new API
+        maxScansPerSecond: 1, // Limit scans to 1 per second
+        preferredCamera: 'environment' // Use the back camera
+    }
 );
 
 console.debug("Starting QR Scanner.");
@@ -29,9 +33,33 @@ qrScanner.start().then(() => {
     console.debug("Error starting QR Scanner:", error);
 });
 
+// Variables for scan throttling
+let lastScanTime = 0;
+const SCAN_DELAY = 1000; // 1 second delay between scans
+
 // Process scanned data
 function processScannedData(scooterId) {
     console.debug("Processing scanned data:", scooterId);
+
+    const currentTime = Date.now();
+    if (currentTime - lastScanTime < SCAN_DELAY) {
+        console.debug("Scan ignored due to scan delay.");
+        return;
+    }
+    lastScanTime = currentTime;
+
+    // Validate scooter ID
+    const validPrefixes = ['https://tier.app/', 'https://qr.tier-services.io/'];
+    if (!validPrefixes.some(prefix => scooterId.startsWith(prefix))) {
+        console.debug("Invalid scooter ID prefix:", scooterId);
+        // Display error message
+        scannedScooterIdDiv.textContent = "Invalid QR code";
+        scannedScooterIdDiv.style.display = 'block';
+        setTimeout(() => {
+            scannedScooterIdDiv.style.display = 'none';
+        }, 5000);
+        return;
+    }
 
     // Add to list
     fetch('/save_scan', {
@@ -53,19 +81,31 @@ function processScannedData(scooterId) {
                 overlay.style.opacity = '0';
             }, 300);
 
+            // Remove URL prefix from scooterId for display
+            const validPrefixes = ['https://tier.app/', 'https://qr.tier-services.io/'];
+            let displayId = scooterId;
+            validPrefixes.forEach(prefix => {
+                if (scooterId.startsWith(prefix)) {
+                    displayId = scooterId.slice(prefix.length);
+                }
+            });
+
             // Display scanned scooter ID
-            scannedScooterIdDiv.textContent = scooterId;
+            scannedScooterIdDiv.textContent = displayId;
             scannedScooterIdDiv.style.display = 'block';
             setTimeout(() => {
                 scannedScooterIdDiv.style.display = 'none';
             }, 5000);
 
             let listItem = document.createElement('li');
+            listItem.dataset.scanId = data.scan_id; // Store the scan ID
+
             let timestamp = new Date();
             let formattedTime = timestamp.getHours().toString().padStart(2, '0') + ':' +
                                 timestamp.getMinutes().toString().padStart(2, '0') + ' | ' +
                                 timestamp.getDate() + '.' + (timestamp.getMonth() + 1) + '.' + timestamp.getFullYear();
-            listItem.textContent = `${scooterId} - ${formattedTime}`;
+
+            listItem.innerHTML = `<span class="scooter-id" data-full-id="${scooterId}" data-short-id="${displayId}">${displayId}</span> - ${formattedTime} <button class="delete-scan-btn" data-scan-id="${data.scan_id}">Delete</button>`;
             scooterList.insertBefore(listItem, scooterList.firstChild);
             totalScootersSpan.textContent = data.total;
             console.debug(`Scooter ID ${scooterId} added to list. Total scooters: ${data.total}`);
@@ -73,6 +113,13 @@ function processScannedData(scooterId) {
             console.debug("Duplicate scooter ID detected:", scooterId);
             // Do not flash red or play beep
             scannedScooterIdDiv.textContent = "Duplicate ID: " + scooterId;
+            scannedScooterIdDiv.style.display = 'block';
+            setTimeout(() => {
+                scannedScooterIdDiv.style.display = 'none';
+            }, 5000);
+        } else if (data.status === 'invalid') {
+            console.debug("Invalid scooter ID:", scooterId);
+            scannedScooterIdDiv.textContent = "Invalid QR code";
             scannedScooterIdDiv.style.display = 'block';
             setTimeout(() => {
                 scannedScooterIdDiv.style.display = 'none';
@@ -155,30 +202,27 @@ adjustCameraSize();
 // Handle window resize
 window.addEventListener('resize', adjustCameraSize);
 
-// Install PWA
-let deferredPrompt;
-const savePwaBtn = document.getElementById('save-pwa-btn');
-if (savePwaBtn) {
-    console.debug("Save PWA button found.");
-    window.addEventListener('beforeinstallprompt', (e) => {
-        console.debug("beforeinstallprompt event fired.");
-        e.preventDefault();
-        deferredPrompt = e;
-        savePwaBtn.style.display = 'block';
-    });
-
-    savePwaBtn.addEventListener('click', () => {
-        console.debug("Save as PWA button clicked.");
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.debug('User accepted the install prompt');
+// Event delegation for delete buttons in the list
+scooterList.addEventListener('click', function(event) {
+    if (event.target.classList.contains('delete-scan-btn')) {
+        const scanId = event.target.dataset.scanId;
+        const scooterIdElement = event.target.parentElement.querySelector('.scooter-id');
+        const scooterId = scooterIdElement.dataset.shortId;
+        if (confirm(`Are you sure you want to delete ID ${scooterId}?`)) {
+            fetch(`/delete_scan/${scanId}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.debug(`Scan ${scanId} deleted successfully.`);
+                    // Remove the list item
+                    event.target.parentElement.remove();
+                    // Update total scooters count
+                    totalScootersSpan.textContent = parseInt(totalScootersSpan.textContent) - 1;
                 } else {
-                    console.debug('User dismissed the install prompt');
+                    console.debug(`Error deleting scan ${scanId}.`);
+                    alert('Error deleting scooter ID.');
                 }
-                deferredPrompt = null;
             });
         }
-    });
-}
+    }
+});
