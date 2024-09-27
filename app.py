@@ -5,7 +5,6 @@ import io
 import pandas as pd
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
-import pytz  # For timezone handling
 
 # Get the absolute path of the directory where app.py is located
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -104,6 +103,43 @@ def save_scan():
         logging.debug(f"Session ID {session_id} not found.")
         return jsonify({'status': 'error'})
 
+@app.route('/add_manual_entry', methods=['POST'])
+def add_manual_entry():
+    data = request.get_json()
+    logging.debug(f"Received manual entry data: {data}")
+    list_id = data.get('list_id')
+    scooter_id = data.get('scooter_id').strip()
+    logging.debug(f"List ID: {list_id}, Scooter ID: {scooter_id}")
+
+    # Validate scooter ID (5 to 9 characters, no URLs)
+    if len(scooter_id) < 5 or len(scooter_id) > 9:
+        logging.debug("Invalid scooter ID length.")
+        return jsonify({'status': 'invalid_length'})
+    if any(scooter_id.startswith(prefix) for prefix in ['http://', 'https://']):
+        logging.debug("Invalid scooter ID: cannot be a URL.")
+        return jsonify({'status': 'invalid_format'})
+
+    # Check if list exists
+    current_list = List.query.get(list_id)
+    if current_list:
+        logging.debug(f"List found: {current_list.id}")
+        # Check for duplicates within the list
+        existing_scan = Scan.query.filter_by(list_id=list_id, scooter_id=scooter_id).first()
+        if existing_scan:
+            logging.debug(f"Scooter ID {scooter_id} already exists in list {list_id}.")
+            return jsonify({'status': 'duplicate'})
+        else:
+            # Add new scan
+            new_scan = Scan(scooter_id=scooter_id, list_id=list_id)
+            db.session.add(new_scan)
+            db.session.commit()
+            total_scans = Scan.query.filter_by(list_id=list_id).count()
+            logging.debug(f"Scooter ID {scooter_id} added manually to list {list_id}. Total items: {total_scans}")
+            return jsonify({'status': 'success', 'total': total_scans, 'scan_id': new_scan.id})
+    else:
+        logging.debug(f"List ID {list_id} not found.")
+        return jsonify({'status': 'error'})
+
 @app.route('/export/<int:list_id>')
 def export(list_id):
     logging.debug(f"Exporting data for list {list_id}.")
@@ -122,13 +158,10 @@ def export(list_id):
             else:
                 short_id = full_id
 
-            # Adjust timestamp to user's timezone if necessary
-            local_timestamp = scan.timestamp  # Adjust if needed
-
             data.append({
                 'Full Scooter ID': full_id,
                 'Scooter ID': short_id,
-                'Timestamp': local_timestamp.strftime('%H:%M | %d.%m.%Y')
+                'Timestamp': scan.timestamp.strftime('%H:%M | %d.%m.%Y')
             })
 
         df = pd.DataFrame(data)

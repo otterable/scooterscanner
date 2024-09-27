@@ -8,17 +8,11 @@ body {
     background-color: #000f3c;
     font-weight: bold;
     color: white; /* Set text color to white */
-    overflow: hidden;
+    overflow-y: auto; /* Allow vertical scrolling */
 }
-
 
 h1, h2, p, button, input, label {
     font-weight: bold;
-}
-
-#scooter-list {
-    max-height: 400px; /* Adjust as needed */
-    overflow-y: auto;
 }
 
 #camera-container {
@@ -91,6 +85,8 @@ h1, h2, p, button, input, label {
     justify-content: center;
     align-items: center;
     margin: 5px;
+    position: relative;
+    z-index: 2;
 }
 
 #button-container button {
@@ -107,20 +103,20 @@ h1, h2, p, button, input, label {
 }
 
 #list-container {
-    position: fixed;
-    bottom: 0;
+    position: relative;
     width: 100%;
-    max-height: 50vh;
     background-color: #000f3c;
     overflow-y: auto;
     border-top: 1px solid #ccc;
     color: white;
     z-index: 1;
+    max-height: calc(100vh - 200px); /* Adjust as needed */
 }
 
 #scooter-list {
     list-style-type: none;
     padding: 0;
+    margin: 0;
 }
 
 #scooter-list li {
@@ -166,7 +162,6 @@ h1, h2, p {
         max-height: 40vh;
     }
 }
-
 
 a {
     color: inherit; /* Inherit color from parent element */

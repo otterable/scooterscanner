@@ -11,13 +11,14 @@
     <h1>List: {{ list.name }}</h1>
     <p>Warehouse: {{ list.warehouse }}</p>
     <p>Date: {{ list.timestamp.strftime('%d.%m.%Y %H:%M') }}</p>
-    <p>Total Scooters: {{ scans|length }}</p>
+    <p>Total Scooters: <span id="total-scooters">{{ scans|length }}</span></p>
     <div id="button-container">
         <button onclick="window.location.href='/lists'">Return</button>
         <button onclick="exportList()">Export to .xlsx</button>
         <button onclick="deleteList()">Delete List</button>
         <button onclick="continueScanning()">Continue Scanning</button>
         <button onclick="toggleURLs()">Toggle URLs</button>
+        <button onclick="manualEntry()">Manual Entry</button>
     </div>
     <div id="list-container">
         <ul id="scooter-list">
@@ -103,6 +104,47 @@
                     item.querySelector('a').setAttribute('href', fullId);
                 }
             });
+        }
+
+        function manualEntry() {
+            console.debug("Manual Entry button clicked.");
+            const scooterId = prompt("Enter Scooter ID (5-9 characters):").trim();
+            if (scooterId) {
+                if (scooterId.length < 5 || scooterId.length > 9) {
+                    alert("Invalid Scooter ID length. Must be 5 to 9 characters.");
+                    return;
+                }
+                if (scooterId.startsWith('http://') || scooterId.startsWith('https://')) {
+                    alert("Invalid Scooter ID. Do not include URLs.");
+                    return;
+                }
+                // Send to server
+                fetch('/add_manual_entry', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ list_id: '{{ list.id }}', scooter_id: scooterId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.debug("Response from add_manual_entry:", data);
+                    if (data.status === 'success') {
+                        alert("Scooter ID added successfully.");
+                        location.reload();
+                    } else if (data.status === 'duplicate') {
+                        alert("Scooter ID already exists in the list.");
+                    } else if (data.status === 'invalid_length') {
+                        alert("Invalid Scooter ID length. Must be 5 to 9 characters.");
+                    } else if (data.status === 'invalid_format') {
+                        alert("Invalid Scooter ID. Do not include URLs.");
+                    } else {
+                        alert("Error adding Scooter ID.");
+                    }
+                })
+                .catch(error => {
+                    console.debug("Error adding manual entry:", error);
+                    alert("Error adding Scooter ID.");
+                });
+            }
         }
     </script>
 

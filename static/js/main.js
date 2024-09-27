@@ -156,12 +156,10 @@ document.getElementById('toggle-list-btn').addEventListener('click', () => {
 function toggleListVisibility() {
     if (isListVisible) {
         listContainer.style.display = 'none';
-        document.getElementById('camera-container').style.display = 'block';
-        console.debug("List container hidden, camera shown.");
+        console.debug("List container hidden.");
     } else {
         listContainer.style.display = 'block';
-        document.getElementById('camera-container').style.display = 'none';
-        console.debug("List container shown, camera hidden.");
+        console.debug("List container shown.");
     }
     isListVisible = !isListVisible;
 }
@@ -238,5 +236,25 @@ scooterList.addEventListener('click', function(event) {
                 }
             });
         }
+    }
+});
+
+// Add focus mode
+video.addEventListener('click', () => {
+    console.debug('Video clicked. Attempting to refocus camera.');
+    const track = video.srcObject.getVideoTracks()[0];
+    const capabilities = track.getCapabilities();
+    if (capabilities.focusMode && capabilities.focusDistance) {
+        console.debug('Camera supports focusMode and focusDistance. Setting focusMode to "manual".');
+        const focusDistance = (capabilities.focusDistance.max + capabilities.focusDistance.min) / 2;
+        track.applyConstraints({
+            advanced: [{ focusMode: 'manual', focusDistance: focusDistance }]
+        }).then(() => {
+            console.debug('Focus adjusted successfully.');
+        }).catch(err => {
+            console.debug('Error adjusting focus:', err);
+        });
+    } else {
+        console.debug('Camera does not support focusMode or focusDistance.');
     }
 });
