@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tier-scooter-scanner-v2'; // Updated cache version
+const CACHE_NAME = 'tier-scooter-scanner-v3'; // Updated cache version
 const STATIC_ASSETS = [
     '/',
     '/static/css/style.css',

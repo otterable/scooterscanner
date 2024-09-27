@@ -5,6 +5,7 @@ import io
 import pandas as pd
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+import pytz  # For timezone handling
 
 # Get the absolute path of the directory where app.py is located
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -24,14 +25,15 @@ class List(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     warehouse = db.Column(db.String(100))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
     scans = db.relationship('Scan', backref='list', lazy=True, cascade='all, delete-orphan')
 
 class Scan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    scooter_id = db.Column(db.String(100))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    scooter_id = db.Column(db.String(200))
+    timestamp = db.Column(db.DateTime, default=datetime.now)
     list_id = db.Column(db.Integer, db.ForeignKey('list.id'), nullable=False)
+
 @app.route('/')
 def index():
     logging.debug("Rendering index page.")
@@ -74,6 +76,13 @@ def save_scan():
     session_id = data.get('session_id')
     scooter_id = data.get('scooter_id')
     logging.debug(f"Session ID: {session_id}, Scooter ID: {scooter_id}")
+
+    # Validate scooter_id
+    valid_prefixes = ['https://tier.app/', 'https://qr.tier-services.io/']
+    if not any(scooter_id.startswith(prefix) for prefix in valid_prefixes):
+        logging.debug(f"Invalid scooter ID prefix: {scooter_id}")
+        return jsonify({'status': 'invalid'})
+
     # Check if list exists
     current_list = List.query.get(session_id)
     if current_list:
@@ -90,7 +99,7 @@ def save_scan():
             db.session.commit()
             total_scans = Scan.query.filter_by(list_id=session_id).count()
             logging.debug(f"Scooter ID {scooter_id} added to session {session_id}. Total items: {total_scans}")
-            return jsonify({'status': 'success', 'total': total_scans})
+            return jsonify({'status': 'success', 'total': total_scans, 'scan_id': new_scan.id})
     else:
         logging.debug(f"Session ID {session_id} not found.")
         return jsonify({'status': 'error'})
@@ -102,7 +111,26 @@ def export(list_id):
     if current_list:
         logging.debug(f"List found: {current_list.id}")
         scans = Scan.query.filter_by(list_id=list_id).all()
-        data = [{'Scooter ID': scan.scooter_id, 'Timestamp': scan.timestamp.strftime('%H:%M | %d.%m.%Y')} for scan in scans]
+        data = []
+        for scan in scans:
+            full_id = scan.scooter_id
+            # Remove URL prefix
+            for prefix in ['https://tier.app/', 'https://qr.tier-services.io/']:
+                if full_id.startswith(prefix):
+                    short_id = full_id[len(prefix):]
+                    break
+            else:
+                short_id = full_id
+
+            # Adjust timestamp to user's timezone if necessary
+            local_timestamp = scan.timestamp  # Adjust if needed
+
+            data.append({
+                'Full Scooter ID': full_id,
+                'Scooter ID': short_id,
+                'Timestamp': local_timestamp.strftime('%H:%M | %d.%m.%Y')
+            })
+
         df = pd.DataFrame(data)
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -119,8 +147,9 @@ def export(list_id):
 def list_lists():
     logging.debug("Fetching all lists.")
     all_lists = List.query.order_by(List.timestamp.desc()).all()
+    total_scooters = sum(len(lst.scans) for lst in all_lists)
     logging.debug(f"Total lists found: {len(all_lists)}")
-    return render_template('lists.html', lists=all_lists)
+    return render_template('lists.html', lists=all_lists, total_scooters=total_scooters)
 
 @app.route('/list/<int:list_id>')
 def view_list(list_id):
@@ -130,6 +159,16 @@ def view_list(list_id):
         logging.debug(f"List found: {current_list.id}")
         scans = Scan.query.filter_by(list_id=list_id).order_by(Scan.timestamp.desc()).all()
         logging.debug(f"Total scans in list: {len(scans)}")
+        # Process scans to add scooter_id_short
+        for scan in scans:
+            full_id = scan.scooter_id
+            # Remove URL prefix
+            for prefix in ['https://tier.app/', 'https://qr.tier-services.io/']:
+                if full_id.startswith(prefix):
+                    scan.scooter_id_short = full_id[len(prefix):]
+                    break
+            else:
+                scan.scooter_id_short = full_id
         return render_template('view_list.html', list=current_list, scans=scans)
     else:
         logging.debug(f"List {list_id} not found.")

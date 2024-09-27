@@ -52,18 +52,17 @@
     <script src="{{ url_for('static', filename='js/qr-scanner.umd.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <!-- Service Worker Registration -->
-<script>
-    console.debug("Registering service worker.");
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register("/sw.js").then(function(registration) {
-            console.debug('ServiceWorker registration successful with scope: ', registration.scope);
-        }).catch(function(err) {
-            console.debug('ServiceWorker registration failed: ', err);
-        });
-    } else {
-        console.debug("Service workers are not supported.");
-    }
-</script>
-
+    <script>
+        console.debug("Registering service worker.");
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("/sw.js").then(function(registration) {
+                console.debug('ServiceWorker registration successful with scope: ', registration.scope);
+            }).catch(function(err) {
+                console.debug('ServiceWorker registration failed: ', err);
+            });
+        } else {
+            console.debug("Service workers are not supported.");
+        }
+    </script>
 </body>
 </html>

@@ -22,20 +22,22 @@
     <script>
         console.debug("Lists page loaded.");
         console.debug("Total lists displayed: {{ lists|length }}");
-    </script>
-	
-	<script>
-    console.debug("Registering service worker.");
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register("/sw.js").then(function(registration) {
-            console.debug('ServiceWorker registration successful with scope: ', registration.scope);
-        }).catch(function(err) {
-            console.debug('ServiceWorker registration failed: ', err);
-        });
-    } else {
-        console.debug("Service workers are not supported.");
-    }
-</script>
 
+        // Display popup with total scooters and lists
+        alert("{{ total_scooters }} scooters available in {{ lists|length }} lists.");
+    </script>
+
+    <script>
+        console.debug("Registering service worker.");
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("/sw.js").then(function(registration) {
+                console.debug('ServiceWorker registration successful with scope: ', registration.scope);
+            }).catch(function(err) {
+                console.debug('ServiceWorker registration failed: ', err);
+            });
+        } else {
+            console.debug("Service workers are not supported.");
+        }
+    </script>
 </body>
 </html>

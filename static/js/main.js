@@ -22,7 +22,20 @@ const qrScanner = new QrScanner(
     {
         returnDetailedScanResult: true, // Use new API
         maxScansPerSecond: 1, // Limit scans to 1 per second
-        preferredCamera: 'environment' // Use the back camera
+        preferredCamera: 'environment', // Use the back camera
+        highlightScanRegion: true,
+        highlightCodeOutline: true,
+        calculateScanRegion: (video) => {
+            // Adjust the scan region to cover more area (zoom out effect)
+            const smallestDimension = Math.min(video.videoWidth, video.videoHeight);
+            const scanRegionSize = smallestDimension * 0.9; // Adjust as needed
+            return {
+                x: (video.videoWidth - scanRegionSize) / 2,
+                y: (video.videoHeight - scanRegionSize) / 2,
+                width: scanRegionSize,
+                height: scanRegionSize,
+            };
+        }
     }
 );
 
@@ -61,6 +74,14 @@ function processScannedData(scooterId) {
         return;
     }
 
+    // Remove URL prefix from scooterId for display
+    let displayId = scooterId;
+    validPrefixes.forEach(prefix => {
+        if (scooterId.startsWith(prefix)) {
+            displayId = scooterId.slice(prefix.length);
+        }
+    });
+
     // Add to list
     fetch('/save_scan', {
         method: 'POST',
@@ -81,15 +102,6 @@ function processScannedData(scooterId) {
                 overlay.style.opacity = '0';
             }, 300);
 
-            // Remove URL prefix from scooterId for display
-            const validPrefixes = ['https://tier.app/', 'https://qr.tier-services.io/'];
-            let displayId = scooterId;
-            validPrefixes.forEach(prefix => {
-                if (scooterId.startsWith(prefix)) {
-                    displayId = scooterId.slice(prefix.length);
-                }
-            });
-
             // Display scanned scooter ID
             scannedScooterIdDiv.textContent = displayId;
             scannedScooterIdDiv.style.display = 'block';
@@ -103,7 +115,9 @@ function processScannedData(scooterId) {
             let timestamp = new Date();
             let formattedTime = timestamp.getHours().toString().padStart(2, '0') + ':' +
                                 timestamp.getMinutes().toString().padStart(2, '0') + ' | ' +
-                                timestamp.getDate() + '.' + (timestamp.getMonth() + 1) + '.' + timestamp.getFullYear();
+                                timestamp.getDate().toString().padStart(2, '0') + '.' +
+                                (timestamp.getMonth() + 1).toString().padStart(2, '0') + '.' +
+                                timestamp.getFullYear();
 
             listItem.innerHTML = `<span class="scooter-id" data-full-id="${scooterId}" data-short-id="${displayId}">${displayId}</span> - ${formattedTime} <button class="delete-scan-btn" data-scan-id="${data.scan_id}">Delete</button>`;
             scooterList.insertBefore(listItem, scooterList.firstChild);
@@ -112,7 +126,7 @@ function processScannedData(scooterId) {
         } else if (data.status === 'duplicate') {
             console.debug("Duplicate scooter ID detected:", scooterId);
             // Do not flash red or play beep
-            scannedScooterIdDiv.textContent = "Duplicate ID: " + scooterId;
+            scannedScooterIdDiv.textContent = "Duplicate ID: " + displayId;
             scannedScooterIdDiv.style.display = 'block';
             setTimeout(() => {
                 scannedScooterIdDiv.style.display = 'none';

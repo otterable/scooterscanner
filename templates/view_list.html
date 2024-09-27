@@ -23,7 +23,9 @@
         <ul id="scooter-list">
             {% for scan in scans %}
             <li>
-                <span class="scooter-id" data-full-id="{{ scan.scooter_id }}" data-short-id="{{ scan.scooter_id_short }}">{{ scan.scooter_id_short }}</span> - {{ scan.timestamp.strftime('%H:%M | %d.%m.%Y') }}
+                <a href="{{ scan.scooter_id }}" target="_blank">
+                    <span class="scooter-id" data-full-id="{{ scan.scooter_id }}" data-short-id="{{ scan.scooter_id_short }}">{{ scan.scooter_id_short }}</span>
+                </a> - {{ scan.timestamp.strftime('%H:%M | %d.%m.%Y') }}
                 <button onclick="deleteScan({{ scan.id }}, '{{ scan.scooter_id_short }}')">Delete ID</button>
             </li>
             {% else %}
@@ -95,25 +97,26 @@
                 const shortId = scooterIdElement.dataset.shortId;
                 if (scooterIdElement.textContent === shortId) {
                     scooterIdElement.textContent = fullId;
+                    item.querySelector('a').setAttribute('href', fullId);
                 } else {
                     scooterIdElement.textContent = shortId;
+                    item.querySelector('a').setAttribute('href', fullId);
                 }
             });
         }
     </script>
-	
-	<script>
-    console.debug("Registering service worker.");
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register("/sw.js").then(function(registration) {
-            console.debug('ServiceWorker registration successful with scope: ', registration.scope);
-        }).catch(function(err) {
-            console.debug('ServiceWorker registration failed: ', err);
-        });
-    } else {
-        console.debug("Service workers are not supported.");
-    }
-</script>
 
+    <script>
+        console.debug("Registering service worker.");
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("/sw.js").then(function(registration) {
+                console.debug('ServiceWorker registration successful with scope: ', registration.scope);
+            }).catch(function(err) {
+                console.debug('ServiceWorker registration failed: ', err);
+            });
+        } else {
+            console.debug("Service workers are not supported.");
+        }
+    </script>
 </body>
 </html>
