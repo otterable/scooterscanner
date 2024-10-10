@@ -18,6 +18,7 @@
     <h1>Tier Scooter Scanner</h1>
     <button id="create-list-btn">Create New List</button>
     <button id="view-lists-btn">View Lists</button>
+    <button id="validate-list-btn">Validate</button>
 
     <!-- Save as PWA Button -->
     <button id="save-pwa-btn">Download App</button>
@@ -56,6 +57,11 @@
             window.location.href = '/lists';
         });
 
+        document.getElementById('validate-list-btn').addEventListener('click', function() {
+            console.debug("Validate button clicked.");
+            window.location.href = '/validate_lists';
+        });
+
         // Install PWA
         let deferredPrompt;
         const savePwaBtn = document.getElementById('save-pwa-btn');
@@ -91,18 +97,18 @@
         });
     </script>
     <!-- Service Worker Registration -->
-<script>
-    console.debug("Registering service worker.");
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register("/sw.js").then(function(registration) {
-            console.debug('ServiceWorker registration successful with scope: ', registration.scope);
-        }).catch(function(err) {
-            console.debug('ServiceWorker registration failed: ', err);
-        });
-    } else {
-        console.debug("Service workers are not supported.");
-    }
-</script>
+    <script>
+        console.debug("Registering service worker.");
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("/sw.js").then(function(registration) {
+                console.debug('ServiceWorker registration successful with scope: ', registration.scope);
+            }).catch(function(err) {
+                console.debug('ServiceWorker registration failed: ', err);
+            });
+        } else {
+            console.debug("Service workers are not supported.");
+        }
+    </script>
 
 </body>
 </html>

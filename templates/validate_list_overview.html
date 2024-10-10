@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ list.name }} - Validation Overview</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>{{ list.name }} - Validation Overview</h1>
+    <p>Warehouse: {{ list.warehouse }}</p>
+    <p>Date: {{ list.timestamp.strftime('%d.%m.%Y %H:%M') }}</p>
+    <p>Total Scooters: {{ total_scooters }}</p>
+    <p>Validated Scooters: {{ validated_count }}</p>
+
+    <div class="buttons-container">
+        <button onclick="window.location.href='/validate_scan/{{ list.id }}'">Start Validation</button>
+        <button onclick="window.location.href='/export/{{ list.id }}'">Export List</button>
+        <button onclick="deleteList()">Delete List</button>
+        <button onclick="window.location.href='/validate_lists'">Return</button>
+        <button id="manual-entry-btn">Manual Entry</button>
+        <button id="toggle-urls-btn">Toggle URLs</button>
+    </div>
+
+    <div id="scooter-list-container">
+        <h2>Scooters in List</h2>
+        <!-- Sort Buttons -->
+        <div class="sort-buttons">
+            <label>Sort by:</label>
+            <!-- Removed 'All' sort button -->
+            <button id="sort-validated-btn">Validated</button>
+            <button id="sort-not-validated-btn">Not Validated</button>
+        </div>
+        <table id="scooter-table">
+            <thead>
+                <tr>
+                    <th>Scooter ID</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for scooter in scooters_with_status %}
+                <tr data-scooter-id="{{ scooter.scooter_id }}" data-status="{% if scooter.is_validated %}validated{% else %}not-validated{% endif %}">
+                    <td class="scooter-id-cell" data-full-id="{{ scooter.scooter_id }}" data-short-id="{{ scooter.short_id }}">{{ scooter.short_id }}</td>
+                    <td class="{% if scooter.is_validated %}validated{% else %}not-validated{% endif %}">
+                        {% if scooter.is_validated %}Validated{% else %}Not Validated{% endif %}
+                    </td>
+                    <td>
+                        {% if scooter.is_validated %}
+                        <button class="unvalidate-btn" data-scooter-id="{{ scooter.scooter_id }}">Unvalidate</button>
+                        {% else %}
+                        <button class="validate-btn" data-scooter-id="{{ scooter.scooter_id }}">Validate</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        console.debug("Validation Overview page loaded.");
+        console.debug("List ID: {{ list.id }}");
+
+        function deleteList() {
+            if (confirm('Are you sure you want to delete this list?')) {
+                fetch('/delete_list/{{ list.id }}', {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = '/validate_lists';
+                    } else {
+                        alert('Failed to delete list.');
+                    }
+                })
+                .catch(error => {
+                    console.debug("Fetch error:", error);
+                });
+            }
+        }
+
+        // Handle unvalidation
+        document.querySelectorAll('.unvalidate-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const scooterId = button.getAttribute('data-scooter-id');
+                console.debug("Unvalidate button clicked for scooter ID:", scooterId);
+                if (confirm(`Are you sure you want to unvalidate scooter ID ${scooterId}?`)) {
+                    fetch('/unvalidate_scooter_in_list', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ list_id: {{ list.id }}, scooter_id: scooterId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.debug("Response from unvalidate_scooter_in_list:", data);
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else {
+                            alert('Failed to unvalidate scooter.');
+                        }
+                    })
+                    .catch(error => {
+                        console.debug("Fetch error:", error);
+                    });
+                }
+            });
+        });
+
+        // Handle validation
+        document.querySelectorAll('.validate-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const scooterId = button.getAttribute('data-scooter-id');
+                console.debug("Validate button clicked for scooter ID:", scooterId);
+                if (confirm(`Are you sure you want to validate scooter ID ${scooterId}?`)) {
+                    fetch('/add_manual_validation', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ list_id: {{ list.id }}, scooter_id: scooterId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.debug("Response from add_manual_validation:", data);
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else if (data.status === 'duplicate') {
+                            alert('Scooter already validated.');
+                        } else {
+                            alert('Failed to validate scooter.');
+                        }
+                    })
+                    .catch(error => {
+                        console.debug("Fetch error:", error);
+                    });
+                }
+            });
+        });
+
+        // Manual Entry
+        document.getElementById('manual-entry-btn').addEventListener('click', () => {
+            console.debug("Manual Entry button clicked.");
+            const scooterId = prompt("Enter Scooter ID (5-9 characters):");
+            if (scooterId) {
+                fetch('/add_manual_validation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ list_id: {{ list.id }}, scooter_id: scooterId.trim() })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.debug("Response from add_manual_validation:", data);
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else if (data.status === 'duplicate') {
+                        alert('Scooter already validated.');
+                    } else if (data.status === 'not_in_list') {
+                        alert('Scooter is not in the original list.');
+                    } else {
+                        alert('Failed to validate scooter.');
+                    }
+                })
+                .catch(error => {
+                    console.debug("Fetch error:", error);
+                });
+            }
+        });
+
+        // Toggle URLs
+        let showFullURLs = false;
+        document.getElementById('toggle-urls-btn').addEventListener('click', () => {
+            showFullURLs = !showFullURLs;
+            document.querySelectorAll('.scooter-id-cell').forEach(cell => {
+                const fullId = cell.getAttribute('data-full-id');
+                const shortId = cell.getAttribute('data-short-id');
+                if (showFullURLs) {
+                    if (!fullId.startsWith('http')) {
+                        // Add prefix if missing
+                        cell.textContent = 'https://tier.app/' + fullId;
+                    } else {
+                        cell.textContent = fullId;
+                    }
+                } else {
+                    cell.textContent = shortId;
+                }
+            });
+        });
+
+        // Sorting functionality
+        const allRows = Array.from(document.querySelectorAll('#scooter-table tbody tr'));
+
+        // Remove 'Sort All' button and functionality
+        // document.getElementById('sort-all-btn').addEventListener('click', () => {
+        //     console.debug("Sort All button clicked.");
+        //     allRows.forEach(row => row.style.display = '');
+        // });
+
+        document.getElementById('sort-validated-btn').addEventListener('click', () => {
+            console.debug("Sort Validated button clicked.");
+            allRows.forEach(row => {
+                if (row.getAttribute('data-status') === 'validated') {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        document.getElementById('sort-not-validated-btn').addEventListener('click', () => {
+            console.debug("Sort Not Validated button clicked.");
+            allRows.forEach(row => {
+                if (row.getAttribute('data-status') === 'not-validated') {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // On page load, show only unvalidated scooters
+        window.addEventListener('load', () => {
+            document.getElementById('sort-not-validated-btn').click();
+        });
+
+        // Service Worker Registration
+        console.debug("Registering service worker.");
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("/sw.js").then(function(registration) {
+                console.debug('ServiceWorker registration successful with scope: ', registration.scope);
+            }).catch(function(err) {
+                console.debug('ServiceWorker registration failed: ', err);
+            });
+        } else {
+            console.debug("Service workers are not supported.");
+        }
+    </script>
+</body>
+</html>

@@ -46,6 +46,25 @@ qrScanner.start().then(() => {
     console.debug("Error starting QR Scanner:", error);
 });
 
+// Add focus on tap
+video.addEventListener('click', () => {
+    console.debug("Video clicked - requesting focus.");
+    if (qrScanner && qrScanner.hasCamera) {
+        const capabilities = qrScanner.videoTrack.getCapabilities();
+        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+            qrScanner.videoTrack.applyConstraints({
+                advanced: [{ focusMode: 'continuous' }]
+            }).then(() => {
+                console.debug("Focus mode set to continuous.");
+            }).catch(err => {
+                console.debug("Error setting focus mode:", err);
+            });
+        } else {
+            console.debug("Focus mode not supported.");
+        }
+    }
+});
+
 // Variables for scan throttling
 let lastScanTime = 0;
 const SCAN_DELAY = 1000; // 1 second delay between scans
@@ -63,8 +82,9 @@ function processScannedData(scooterId) {
 
     // Validate scooter ID
     const validPrefixes = ['https://tier.app/', 'https://qr.tier-services.io/'];
-    if (!validPrefixes.some(prefix => scooterId.startsWith(prefix))) {
-        console.debug("Invalid scooter ID prefix:", scooterId);
+    const isValidId = (scooterId.length >= 5 && scooterId.length <= 9) || validPrefixes.some(prefix => scooterId.startsWith(prefix));
+    if (!isValidId) {
+        console.debug("Invalid scooter ID format:", scooterId);
         // Display error message
         scannedScooterIdDiv.textContent = "Invalid QR code";
         scannedScooterIdDiv.style.display = 'block';
@@ -156,12 +176,15 @@ document.getElementById('toggle-list-btn').addEventListener('click', () => {
 function toggleListVisibility() {
     if (isListVisible) {
         listContainer.style.display = 'none';
-        console.debug("List container hidden.");
+        document.getElementById('camera-container').style.display = 'block';
+        console.debug("List container hidden, camera shown.");
     } else {
         listContainer.style.display = 'block';
-        console.debug("List container shown.");
+        document.getElementById('camera-container').style.display = 'none';
+        console.debug("List container shown, camera hidden.");
     }
     isListVisible = !isListVisible;
+    console.debug("List container position adjusted.");
 }
 
 // Finish list
@@ -239,22 +262,11 @@ scooterList.addEventListener('click', function(event) {
     }
 });
 
-// Add focus mode
-video.addEventListener('click', () => {
-    console.debug('Video clicked. Attempting to refocus camera.');
-    const track = video.srcObject.getVideoTracks()[0];
-    const capabilities = track.getCapabilities();
-    if (capabilities.focusMode && capabilities.focusDistance) {
-        console.debug('Camera supports focusMode and focusDistance. Setting focusMode to "manual".');
-        const focusDistance = (capabilities.focusDistance.max + capabilities.focusDistance.min) / 2;
-        track.applyConstraints({
-            advanced: [{ focusMode: 'manual', focusDistance: focusDistance }]
-        }).then(() => {
-            console.debug('Focus adjusted successfully.');
-        }).catch(err => {
-            console.debug('Error adjusting focus:', err);
-        });
-    } else {
-        console.debug('Camera does not support focusMode or focusDistance.');
+// Manual Entry
+document.getElementById('manual-entry-btn').addEventListener('click', () => {
+    console.debug("Manual Entry button clicked.");
+    const scooterId = prompt("Enter Scooter ID (5-9 characters):");
+    if (scooterId) {
+        processScannedData(scooterId.trim());
     }
 });

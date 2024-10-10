@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Validate List - {{ list_name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Ensure validation-info overlays the camera */
+        #validation-info {
+            position: absolute;
+            top: 50px; /* Adjust as needed */
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 2;
+            color: white;
+            font-size: 20px;
+            text-shadow: 1px 1px 2px black;
+        }
+        /* Adjust list-name-overlay to have higher z-index */
+        #list-name-overlay {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 3;
+            color: white;
+            font-size: 24px;
+            text-shadow: 1px 1px 2px black;
+        }
+    </style>
+</head>
+<body>
+    <div id="camera-container">
+        <!-- List name overlay -->
+        <div id="list-name-overlay">{{ list_name }}</div>
+        <!-- Validation info -->
+        <div id="validation-info">
+            <h2>Validated: <span id="scanned-count">{{ validated_count }}</span>/<span id="total-count">{{ total_scooters }}</span></h2>
+        </div>
+        <!-- Pause button -->
+        <button id="pause-btn">Pause</button>
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div id="overlay"></div>
+        <div id="scanned-scooter-id"></div>
+    </div>
+    <div id="button-container">
+        <button id="toggle-list-btn">Toggle List</button>
+        <button id="manual-entry-btn">Manual Entry</button>
+        <button id="finish-validation-btn">Finish Validation</button>
+    </div>
+    <!-- Place the list container after the buttons -->
+    <div id="list-container" style="display:none;">
+        <!-- List content -->
+        <h2>List: {{ list_name }} (Validation)</h2>
+        <p>Total Scooters: {{ total_scooters }}</p>
+        <p>Scooters Validated: <span id="validated-count">{{ validated_count }}</span></p>
+        <p>Scooters Left: <span id="scooters-left">{{ total_scooters - validated_count }}</span></p>
+        <!-- Add a toggle for full URLs -->
+        <button id="toggle-url-btn">Toggle Full URLs</button>
+        <table id="scooter-status-table">
+            <thead>
+                <tr>
+                    <th>Scooter ID</th>
+                    <th>Status</th>
+                    <th>Action</th> <!-- For unvalidation -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for scooter in scooters_with_status %}
+                <tr data-scooter-id="{{ scooter.short_id }}" data-full-id="{{ scooter.scooter_id }}">
+                    <td class="scooter-id-cell">{{ scooter.short_id }}</td>
+                    <td class="validation-status">{% if scooter.is_validated %}Validated{% else %}Not Validated{% endif %}</td>
+                    <td>
+                        {% if scooter.is_validated %}
+                        <button class="unvalidate-btn" data-scooter-id="{{ scooter.short_id }}">Unvalidate</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Audio -->
+    <audio id="beep-sound" src="{{ url_for('static', filename='audio/beep.mp3') }}"></audio>
+
+    <!-- JavaScript -->
+    <script>
+        console.debug("Validation Scan page loaded.");
+        const sessionId = '{{ session_id }}';
+        const listName = '{{ list_name }}';
+        const totalScooters = {{ total_scooters }};
+        const originalScooterIds = {{ scooter_ids | safe }};
+        const scootersWithStatus = {{ scooters_with_status | tojson }};
+        const validatedCount = {{ validated_count }};
+        console.debug("Session ID:", sessionId);
+        console.debug("List Name:", listName);
+        console.debug("Total scooters to validate:", totalScooters);
+        console.debug("Scooters with status:", scootersWithStatus);
+    </script>
+    <!-- Include the UMD version of qr-scanner -->
+    <script src="{{ url_for('static', filename='js/qr-scanner.umd.min.js') }}"></script>
+    <!-- Include a new JS file for validation scanning -->
+    <script src="{{ url_for('static', filename='js/validate_main.js') }}"></script>
+    <!-- Service Worker Registration -->
+    <script>
+        console.debug("Registering service worker.");
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("/sw.js").then(function(registration) {
+                console.debug('ServiceWorker registration successful with scope: ', registration.scope);
+            }).catch(function(err) {
+                console.debug('ServiceWorker registration failed: ', err);
+            });
+        } else {
+            console.debug("Service workers are not supported.");
+        }
+    </script>
+</body>
+</html>

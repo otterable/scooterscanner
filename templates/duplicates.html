@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Duplicate Scooters</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Duplicate Scooters</h1>
+    <button id="toggle-url-btn">Toggle Full URLs</button>
+	   <button onclick="window.location.href='/export_duplicates'">Export to Excel</button>
+    <button onclick="window.location.href='/lists'">Return</button>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>#</th>
+            <th>Lists</th>
+            <th>Edit</th>
+        </tr>
+        {% for duplicate in duplicates %}
+        <tr data-scooter-id="{{ duplicate.scooter_id }}" data-full-ids="{{ duplicate.full_ids|join(',') }}">
+            <td class="scooter-id-cell">{{ duplicate.scooter_id }}</td>
+            <td>{{ duplicate.count }}</td>
+            <td>
+                {% for list in duplicate.lists %}
+                {{ list.name }}<br>
+                {% endfor %}
+            </td>
+            <td>
+                <form action="/remove_duplicate" method="post">
+                    <input type="hidden" name="scooter_id" value="{{ duplicate.scooter_id }}">
+                    <select name="list_id">
+                        {% for list in duplicate.lists %}
+                        <option value="{{ list.id }}">{{ list.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">Unlist</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+ 
+    <script>
+        console.debug("Duplicates page loaded.");
+        console.debug("Total duplicates displayed: {{ duplicates|length }}");
+
+        let showFullURLs = false;
+        document.getElementById('toggle-url-btn').addEventListener('click', () => {
+            showFullURLs = !showFullURLs;
+            document.querySelectorAll('tr[data-scooter-id]').forEach(row => {
+                let scooterIdCell = row.querySelector('.scooter-id-cell');
+                if (showFullURLs) {
+                    let fullIds = row.getAttribute('data-full-ids').split(',');
+                    scooterIdCell.innerHTML = fullIds.join('<br>');
+                } else {
+                    scooterIdCell.textContent = row.getAttribute('data-scooter-id');
+                }
+            });
+            console.debug("Toggled full URLs:", showFullURLs);
+        });
+    </script>
+
+    <script>
+        console.debug("Registering service worker.");
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("/sw.js").then(function(registration) {
+                console.debug('ServiceWorker registration successful with scope: ', registration.scope);
+            }).catch(function(err) {
+                console.debug('ServiceWorker registration failed: ', err);
+            });
+        } else {
+            console.debug("Service workers are not supported.");
+        }
+    </script>
+</body>
+</html>

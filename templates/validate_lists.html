@@ -2,39 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>All Lists - Tier Scooter Scanner</title>
+    <title>Select a List to Validate</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <h1>All Lists</h1>
+    <h1>Select a List to Validate</h1>
     <div id="lists-container">
         <ul id="lists">
             {% for list in lists %}
             <li class="list-item">
-                <a href="/list/{{ list.id }}">{{ list.name }} - {{ list.warehouse }} - {{ list.timestamp.strftime('%d.%m.%Y %H:%M') }}</a>
+                <a href="/validate_list_overview/{{ list.id }}">{{ list.name }} - {{ list.warehouse }} - {{ list.timestamp.strftime('%d.%m.%Y %H:%M') }}</a>
             </li>
             {% else %}
-            <li>No lists available.</li>
+            <li>No lists available for validation.</li>
             {% endfor %}
         </ul>
     </div>
     <div class="buttons-container">
         <button onclick="window.location.href='/'">Return</button>
-        <button onclick="checkForDuplicates()">Check for Duplicates</button>
     </div>
     <script>
-        console.debug("Lists page loaded.");
+        console.debug("Validate Lists page loaded.");
         console.debug("Total lists displayed: {{ lists|length }}");
-
-        // Display popup with total scooters and lists
-        alert("{{ total_scooters }} unique scooters available in {{ lists|length }} lists. {{ duplicate_count }} scooters found in multiple lists.");
-
-        function checkForDuplicates() {
-            console.debug("Check for Duplicates button clicked.");
-            window.location.href = '/check_duplicates';
-        }
     </script>
 
     <script>

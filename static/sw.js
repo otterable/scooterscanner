@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tier-scooter-scanner-v4'; // Updated cache version
+const CACHE_NAME = 'tier-scooter-scanner-v5'; // Updated cache version
 const STATIC_ASSETS = [
     '/',
     '/static/css/style.css',
@@ -11,7 +11,7 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', function(event) {
-    console.debug('Service Worker installing.');
+    console.debug('Service Worker installing. Cache version:', CACHE_NAME);
     event.waitUntil(
         caches.open(CACHE_NAME).then(function(cache) {
             console.debug('Caching static assets.');
@@ -42,7 +42,7 @@ self.addEventListener('fetch', function(event) {
     console.debug('Fetch event for:', requestUrl.href);
 
     // Define dynamic routes (add more if necessary)
-    const dynamicRoutes = ['/lists', '/list/', '/scan', '/save_scan'];
+    const dynamicRoutes = ['/lists', '/list/', '/scan', '/save_scan', '/validate_scan/', '/save_validation', '/validate_lists'];
 
     // Check if the request is for dynamic content
     if (dynamicRoutes.some(route => requestUrl.pathname.startsWith(route))) {

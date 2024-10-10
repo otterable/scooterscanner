@@ -15,6 +15,107 @@ h1, h2, p, button, input, label {
     font-weight: bold;
 }
 
+/* Improved styles */
+
+h1 {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#lists-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+#lists {
+    list-style-type: none;
+    padding: 0;
+}
+
+#lists li {
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    border-color: #ffffff; /* White border */
+}
+
+#lists li a {
+    text-decoration: none;
+    color: #fff;
+    font-weight: bold;
+}
+
+#lists li a:hover {
+    text-decoration: underline;
+}
+
+.buttons-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.buttons-container button {
+    margin: 5px;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* Alert styles */
+#alert {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ced4da;
+    color: #495057;
+}
+
+/* Scooter table styles */
+#scooter-table {
+    width: 90%;
+    border-collapse: collapse;
+    margin: 20px auto;
+}
+
+#scooter-table th, #scooter-table td {
+    border: 1px solid #ffffff; /* Thin white line between columns and rows */
+    padding: 10px;
+    text-align: center;
+}
+
+#scooter-table th {
+    background-color: #000f3c;
+    color: #fff;
+}
+
+.validated {
+    color: green;
+}
+
+.not-validated {
+    color: red;
+}
+
+/* Center the scooter list */
+#scooter-list-container {
+    text-align: center;
+}
+
+table {
+    margin: 0 auto; /* Center the table */
+}
+
+/* Style the sort buttons */
+.sort-buttons {
+    margin-bottom: 10px;
+}
+
+.sort-buttons button {
+    margin-right: 5px;
+}
+
 #camera-container {
     position: relative;
     width: 100%;
