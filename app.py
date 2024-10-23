@@ -31,6 +31,7 @@ local_tz = pytz.timezone('Europe/Berlin')  # Replace with your timezone
 
 # Function to get local time
 def get_local_time():
+    logging.debug("Getting local time.")
     return datetime.now(local_tz)
 
 # Function to normalize scooter IDs
@@ -47,13 +48,17 @@ def normalize_scooter_id(scooter_id):
 
 # Function to compare scooter IDs considering possible prefixes
 def scooter_id_matches(scooter_id_db, scooter_id_input):
+    logging.debug(f"Comparing scooter IDs: {scooter_id_db} and {scooter_id_input}")
     # Normalize both IDs
     id_db_normalized = normalize_scooter_id(scooter_id_db)
     id_input_normalized = normalize_scooter_id(scooter_id_input)
-    return id_db_normalized == id_input_normalized
+    match = id_db_normalized == id_input_normalized
+    logging.debug(f"IDs match: {match}")
+    return match
 
 # Models
 class List(db.Model):
+    logging.debug("Defining List model.")
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     warehouse = db.Column(db.String(100))
@@ -64,17 +69,35 @@ class List(db.Model):
     validations = db.relationship('Validation', backref='list', lazy=True, cascade='all, delete-orphan')
 
 class Scan(db.Model):
+    logging.debug("Defining Scan model.")
     id = db.Column(db.Integer, primary_key=True)
     scooter_id = db.Column(db.String(200))
     timestamp = db.Column(db.DateTime, default=get_local_time)
     list_id = db.Column(db.Integer, db.ForeignKey('list.id'), nullable=False)
 
 class Validation(db.Model):
+    logging.debug("Defining Validation model.")
     id = db.Column(db.Integer, primary_key=True)
     scooter_id = db.Column(db.String(200))
     timestamp = db.Column(db.DateTime, default=get_local_time)
     list_id = db.Column(db.Integer, db.ForeignKey('list.id'), nullable=False)
     is_valid = db.Column(db.Boolean, default=False)
+
+# New Models for Battery Scanning
+class BatteryList(db.Model):
+    logging.debug("Defining BatteryList model.")
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100))
+    warehouse = db.Column(db.String(100))
+    timestamp = db.Column(db.DateTime, default=get_local_time)
+    scans = db.relationship('BatteryScan', backref='battery_list', lazy=True, cascade='all, delete-orphan')
+
+class BatteryScan(db.Model):
+    logging.debug("Defining BatteryScan model.")
+    id = db.Column(db.Integer, primary_key=True)
+    battery_id = db.Column(db.String(200))
+    timestamp = db.Column(db.DateTime, default=get_local_time)
+    list_id = db.Column(db.Integer, db.ForeignKey('battery_list.id'), nullable=False)
 
 @app.route('/')
 def index():
@@ -316,6 +339,7 @@ def add_manual_validation():
 
     current_list = List.query.get(list_id)
     if current_list:
+        logging.debug(f"List found: {current_list.id}")
         # Find matching scooter in scans (allow partial match)
         matching_scan = next((scan for scan in current_list.scans if normalize_scooter_id(scan.scooter_id).endswith(normalized_input_id)), None)
         if not matching_scan:
@@ -562,6 +586,173 @@ def remove_duplicate():
         logging.debug(f"Scooter {scooter_id} not found in list {list_id}.")
     return redirect(url_for('check_duplicates'))
 
+# Battery Scanning Routes
+
+@app.route('/battery_scan', methods=['GET', 'POST'])
+def battery_scan():
+    if request.method == 'POST':
+        logging.debug("Received POST request at /battery_scan.")
+        list_id = request.form.get('list_id')
+        if list_id:
+            logging.debug(f"Battery List ID received: {list_id}")
+            # Continue scanning existing battery list
+            current_list = BatteryList.query.get(list_id)
+            if current_list:
+                logging.debug(f"Continuing battery scanning session: {list_id}")
+                return render_template('battery_scan.html', session_id=list_id, list_name=current_list.name)
+            else:
+                logging.debug(f"Battery List ID {list_id} not found.")
+                return redirect(url_for('index'))
+        else:
+            logging.debug("No battery list ID received, creating new battery list.")
+            # Create new battery list
+            list_name = request.form.get('list_name')
+            warehouse_name = request.form.get('warehouse_name')
+            logging.debug(f"Battery list name: {list_name}, Warehouse name: {warehouse_name}")
+            new_list = BatteryList(name=list_name, warehouse=warehouse_name)
+            db.session.add(new_list)
+            db.session.commit()
+            logging.debug(f"New battery scanning session created: {new_list.id}")
+            return render_template('battery_scan.html', session_id=new_list.id, list_name=list_name)
+    else:
+        logging.debug("GET request received at /battery_scan, redirecting to index.")
+        return redirect(url_for('index'))
+
+@app.route('/save_battery_scan', methods=['POST'])
+def save_battery_scan():
+    data = request.get_json()
+    logging.debug(f"Received battery scan data: {data}")
+    session_id = data.get('session_id')
+    battery_id = data.get('battery_id')
+    logging.debug(f"Session ID: {session_id}, Battery ID: {battery_id}")
+
+    # Check if list exists
+    current_list = BatteryList.query.get(session_id)
+    if current_list:
+        logging.debug(f"Battery list found: {current_list.id}")
+        # No validation on battery_id length or format
+        # Check for duplicates within the list
+        existing_scan = next((scan for scan in current_list.scans if scan.battery_id == battery_id), None)
+        if existing_scan:
+            logging.debug(f"Battery ID {battery_id} already scanned in session {session_id}.")
+            return jsonify({'status': 'duplicate'})
+        else:
+            # Add new scan
+            new_scan = BatteryScan(battery_id=battery_id, list_id=session_id)
+            db.session.add(new_scan)
+            db.session.commit()
+            total_scans = len(current_list.scans)
+            logging.debug(f"Battery ID {battery_id} added to session {session_id}. Total items: {total_scans}")
+            return jsonify({'status': 'success', 'total': total_scans, 'scan_id': new_scan.id})
+    else:
+        logging.debug(f"Session ID {session_id} not found.")
+        return jsonify({'status': 'error'})
+
+@app.route('/add_manual_battery_entry', methods=['POST'])
+def add_manual_battery_entry():
+    data = request.get_json()
+    logging.debug(f"Received manual battery entry data: {data}")
+    list_id = data.get('list_id')
+    battery_id = data.get('battery_id').strip()
+    logging.debug(f"List ID: {list_id}, Battery ID: {battery_id}")
+
+    # No validation on battery_id
+    # Check if list exists
+    current_list = BatteryList.query.get(list_id)
+    if current_list:
+        logging.debug(f"Battery list found: {current_list.id}")
+        # Check for duplicates within the list
+        existing_scan = next((scan for scan in current_list.scans if scan.battery_id == battery_id), None)
+        if existing_scan:
+            logging.debug(f"Battery ID {battery_id} already exists in battery list {list_id}.")
+            return jsonify({'status': 'duplicate'})
+        else:
+            # Add new scan
+            new_scan = BatteryScan(battery_id=battery_id, list_id=list_id)
+            db.session.add(new_scan)
+            db.session.commit()
+            total_scans = len(current_list.scans)
+            logging.debug(f"Battery ID {battery_id} added manually to battery list {list_id}. Total items: {total_scans}")
+            return jsonify({'status': 'success', 'total': total_scans, 'scan_id': new_scan.id})
+    else:
+        logging.debug(f"Battery list ID {list_id} not found.")
+        return jsonify({'status': 'error'})
+
+@app.route('/battery_lists')
+def battery_lists():
+    logging.debug("Fetching all battery lists.")
+    all_lists = BatteryList.query.order_by(BatteryList.timestamp.desc()).all()
+    total_batteries = sum(len(lst.scans) for lst in all_lists)
+    logging.debug(f"Total battery lists found: {len(all_lists)}")
+    logging.debug(f"Total batteries scanned: {total_batteries}")
+    return render_template('battery_lists.html', lists=all_lists, total_batteries=total_batteries)
+
+@app.route('/battery_list/<int:list_id>')
+def view_battery_list(list_id):
+    logging.debug(f"Viewing battery list {list_id}.")
+    current_list = BatteryList.query.get(list_id)
+    if current_list:
+        logging.debug(f"Battery list found: {current_list.id}")
+        scans = current_list.scans
+        logging.debug(f"Total scans in battery list: {len(scans)}")
+        return render_template('view_battery_list.html', list=current_list, scans=scans)
+    else:
+        logging.debug(f"Battery list {list_id} not found.")
+        return 'Battery list not found', 404
+
+@app.route('/export_battery_list/<int:list_id>')
+def export_battery_list(list_id):
+    logging.debug(f"Exporting battery data for list {list_id}.")
+    current_list = BatteryList.query.get(list_id)
+    if current_list:
+        logging.debug(f"Battery list found: {current_list.id}")
+        data = []
+        for scan in current_list.scans:
+            battery_id = scan.battery_id  # No normalization
+            local_time = scan.timestamp.astimezone(local_tz)
+            data.append({
+                'Battery ID': battery_id,
+                'Timestamp': local_time.strftime('%H:%M | %d.%m.%Y')
+            })
+
+        df = pd.DataFrame(data)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False)
+        output.seek(0)
+        filename = f'Battery_{current_list.name}_{current_list.warehouse}_{current_list.timestamp.strftime("%Y%m%d%H%M%S")}.xlsx'
+        logging.debug(f"Battery data exported successfully for list {list_id}. Filename: {filename}")
+        return send_file(output, download_name=filename, as_attachment=True)
+    else:
+        logging.debug(f"No data found for battery list {list_id}.")
+        return 'No data found for this battery list.'
+
+@app.route('/delete_battery_list/<int:list_id>', methods=['POST'])
+def delete_battery_list(list_id):
+    logging.debug(f"Deleting battery list {list_id}.")
+    current_list = BatteryList.query.get(list_id)
+    if current_list:
+        db.session.delete(current_list)
+        db.session.commit()
+        logging.debug(f"Battery list {list_id} deleted successfully.")
+        return '', 200
+    else:
+        logging.debug(f"Battery list {list_id} not found.")
+        return 'Battery list not found', 404
+
+@app.route('/delete_battery_scan/<int:scan_id>', methods=['POST'])
+def delete_battery_scan(scan_id):
+    logging.debug(f"Deleting battery scan {scan_id}.")
+    scan = BatteryScan.query.get(scan_id)
+    if scan:
+        db.session.delete(scan)
+        db.session.commit()
+        logging.debug(f"Battery scan {scan_id} deleted successfully.")
+        return jsonify({'status': 'success'})
+    else:
+        logging.debug(f"Battery scan {scan_id} not found.")
+        return jsonify({'status': 'error'})
+
 # Route to serve sw.js
 @app.route('/sw.js')
 def sw():
@@ -573,6 +764,7 @@ with app.app_context():
     logging.debug("Initializing database.")
     db.create_all()
     logging.debug("Database initialized.")
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,33 @@
+<!-- battery_lists.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Battery Lists</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Battery Lists</h1>
+    <div id="lists-container">
+        <ul id="lists">
+            {% for list in lists %}
+            <li class="list-item">
+                <a href="/battery_list/{{ list.id }}">{{ list.name }} - {{ list.warehouse }} - {{ list.timestamp.strftime('%d.%m.%Y %H:%M') }}</a>
+            </li>
+            {% else %}
+            <li>No battery lists available.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="buttons-container">
+        <button onclick="window.location.href='/'">Return</button>
+    </div>
+    <script>
+        console.debug("Battery Lists page loaded.");
+        console.debug("Total battery lists displayed: {{ lists|length }}");
+        alert("{{ total_batteries }} batteries scanned in {{ lists|length }} lists.");
+    </script>
+</body>
+</html>

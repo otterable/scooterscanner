@@ -1,0 +1,38 @@
+<!-- battery_scan.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ list_name }} - Battery Scanning</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Battery Scanning - {{ list_name }}</h1>
+    <div id="camera-container">
+        <video id="video" autoplay playsinline></video>
+        <div id="overlay"></div>
+        <div id="scanned-battery-id"></div>
+    </div>
+    <div id="button-container">
+        <button id="manual-entry-btn">Manual Entry</button>
+        <button id="finish-list-btn">Finish List</button>
+    </div>
+    <div id="list-container">
+        <h2>Scanned Batteries:</h2>
+        <ul id="battery-list"></ul>
+        <p>Total Batteries: <span id="total-batteries">0</span></p>
+    </div>
+
+    <!-- Include the UMD version of qr-scanner -->
+    <script src="{{ url_for('static', filename='js/qr-scanner.umd.min.js') }}"></script>
+    <script>
+        const sessionId = '{{ session_id }}';
+        const listName = '{{ list_name }}';
+        console.debug("Battery Scan page loaded.");
+        console.debug("Session ID:", sessionId);
+        console.debug("List Name:", listName);
+    </script>
+    <script src="{{ url_for('static', filename='js/battery_main.js') }}"></script>
+</body>
+</html>

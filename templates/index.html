@@ -16,50 +16,90 @@
 <body>
     <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Tier Scooter Scanner Logo" width="200">
     <h1>Tier Scooter Scanner</h1>
-    <button id="create-list-btn">Create New List</button>
-    <button id="view-lists-btn">View Lists</button>
-    <button id="validate-list-btn">Validate</button>
+
+    <!-- Scooter Scanning Buttons -->
+    <button id="create-list-btn">Create New Scooter List</button>
+    <button id="view-lists-btn">View Scooter Lists</button>
+    <button id="validate-list-btn">Validate Scooter List</button>
+
+    <!-- Battery Scanning Buttons -->
+    <button id="create-battery-list-btn">Create New Battery List</button>
+    <button id="view-battery-lists-btn">View Battery Lists</button>
 
     <!-- Save as PWA Button -->
     <button id="save-pwa-btn">Download App</button>
 
-    <!-- Form to submit list name and warehouse name -->
+    <!-- Form to submit scooter list name and warehouse name -->
     <form id="list-form" action="{{ url_for('scan') }}" method="post" style="display:none;">
         <input type="hidden" name="list_name" id="list_name">
         <input type="hidden" name="warehouse_name" id="warehouse_name">
     </form>
 
+    <!-- Form to submit battery list name and warehouse name -->
+    <form id="battery-list-form" action="{{ url_for('battery_scan') }}" method="post" style="display:none;">
+        <input type="hidden" name="list_name" id="battery_list_name">
+        <input type="hidden" name="warehouse_name" id="battery_warehouse_name">
+    </form>
+
     <!-- JavaScript -->
     <script>
         console.debug("Index page loaded.");
+
+        // Scooter scanning buttons
         document.getElementById('create-list-btn').addEventListener('click', function() {
-            console.debug("Create New List button clicked.");
-            let listName = prompt("Enter list name:");
-            console.debug("List name entered:", listName);
+            console.debug("Create New Scooter List button clicked.");
+            let listName = prompt("Enter scooter list name:");
+            console.debug("Scooter list name entered:", listName);
             if (listName) {
                 let warehouseName = prompt("Enter Warehouse name:");
                 console.debug("Warehouse name entered:", warehouseName);
                 if (warehouseName) {
                     document.getElementById('list_name').value = listName;
                     document.getElementById('warehouse_name').value = warehouseName;
-                    console.debug("Submitting form with list name and warehouse name.");
+                    console.debug("Submitting form with scooter list name and warehouse name.");
                     document.getElementById('list-form').submit();
                 } else {
                     console.debug("Warehouse name not entered.");
                 }
             } else {
-                console.debug("List name not entered.");
+                console.debug("Scooter list name not entered.");
             }
         });
 
         document.getElementById('view-lists-btn').addEventListener('click', function() {
-            console.debug("View Lists button clicked.");
+            console.debug("View Scooter Lists button clicked.");
             window.location.href = '/lists';
         });
 
         document.getElementById('validate-list-btn').addEventListener('click', function() {
-            console.debug("Validate button clicked.");
+            console.debug("Validate Scooter List button clicked.");
             window.location.href = '/validate_lists';
+        });
+
+        // Battery scanning buttons
+        document.getElementById('create-battery-list-btn').addEventListener('click', function() {
+            console.debug("Create New Battery List button clicked.");
+            let listName = prompt("Enter battery list name:");
+            console.debug("Battery list name entered:", listName);
+            if (listName) {
+                let warehouseName = prompt("Enter Warehouse name:");
+                console.debug("Warehouse name entered:", warehouseName);
+                if (warehouseName) {
+                    document.getElementById('battery_list_name').value = listName;
+                    document.getElementById('battery_warehouse_name').value = warehouseName;
+                    console.debug("Submitting form with battery list name and warehouse name.");
+                    document.getElementById('battery-list-form').submit();
+                } else {
+                    console.debug("Warehouse name not entered.");
+                }
+            } else {
+                console.debug("Battery list name not entered.");
+            }
+        });
+
+        document.getElementById('view-battery-lists-btn').addEventListener('click', function() {
+            console.debug("View Battery Lists button clicked.");
+            window.location.href = '/battery_lists';
         });
 
         // Install PWA

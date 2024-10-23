@@ -270,3 +270,32 @@ document.getElementById('manual-entry-btn').addEventListener('click', () => {
         processScannedData(scooterId.trim());
     }
 });
+
+// Battery Scanning Variables
+let batteryList = document.getElementById('battery-list');
+let totalBatteriesSpan = document.getElementById('total-batteries');
+
+// Process Scanned Battery Data
+function processBatteryData(batteryId) {
+    console.debug("Processing battery scan:", batteryId);
+
+    fetch('/save_battery_scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, battery_id: batteryId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.debug("Response from save_battery_scan:", data);
+        if (data.status === 'success') {
+            // Update UI with new battery
+            let listItem = document.createElement('li');
+            listItem.textContent = batteryId;
+            batteryList.appendChild(listItem);
+            totalBatteriesSpan.textContent = data.total;
+        }
+    })
+    .catch(error => {
+        console.debug("Error saving battery scan:", error);
+    });
+}

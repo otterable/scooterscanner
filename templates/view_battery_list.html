@@ -1,0 +1,120 @@
+<!-- view_battery_list.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ list.name }} - {{ list.warehouse }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Battery List: {{ list.name }}</h1>
+    <p>Warehouse: {{ list.warehouse }}</p>
+    <p>Date: {{ list.timestamp.strftime('%d.%m.%Y %H:%M') }}</p>
+    <p>Total Batteries: <span id="total-batteries">{{ scans|length }}</span></p>
+    <div id="button-container">
+        <button onclick="window.location.href='/battery_lists'">Return</button>
+        <button onclick="exportList()">Export to .xlsx</button>
+        <button onclick="deleteList()">Delete List</button>
+        <button onclick="continueScanning()">Continue Scanning</button>
+        <button onclick="manualEntry()">Manual Entry</button>
+    </div>
+    <div id="list-container">
+        <ul id="battery-list">
+            {% for scan in scans %}
+            <li>
+                <span class="battery-id">{{ scan.battery_id }}</span> - {{ scan.timestamp.strftime('%H:%M | %d.%m.%Y') }}
+                <button onclick="deleteScan({{ scan.id }}, '{{ scan.battery_id }}')">Delete ID</button>
+            </li>
+            {% else %}
+            <li>No batteries scanned.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <script>
+        console.debug("View Battery List page loaded.");
+        console.debug("List ID: {{ list.id }}");
+        console.debug("Total scans displayed: {{ scans|length }}");
+    
+        function exportList() {
+            console.debug("Export button clicked for battery list {{ list.id }}.");
+            window.location.href = '/export_battery_list/{{ list.id }}';
+        }
+        function deleteList() {
+            console.debug("Delete List button clicked.");
+            if (confirm('Are you sure you want to delete this battery list? This action cannot be undone.')) {
+                fetch('/delete_battery_list/{{ list.id }}', { method: 'POST' })
+                .then(response => {
+                    if (response.ok) {
+                        console.debug("Battery list deleted successfully.");
+                        window.location.href = '/battery_lists';
+                    } else {
+                        console.debug("Error deleting battery list.");
+                        alert('Error deleting battery list.');
+                    }
+                });
+            }
+        }
+        function continueScanning() {
+            console.debug("Continue Scanning button clicked.");
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/battery_scan';
+    
+            let listIdInput = document.createElement('input');
+            listIdInput.type = 'hidden';
+            listIdInput.name = 'list_id';
+            listIdInput.value = '{{ list.id }}';
+    
+            form.appendChild(listIdInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+        function deleteScan(scanId, batteryId) {
+            console.debug(`Delete ID button clicked for scan ${scanId}, Battery ID: ${batteryId}`);
+            if (confirm(`Are you sure you want to delete Battery ID ${batteryId}?`)) {
+                fetch(`/delete_battery_scan/${scanId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.debug(`Battery scan ${scanId} deleted successfully.`);
+                        location.reload();
+                    } else {
+                        console.debug(`Error deleting battery scan ${scanId}.`);
+                        alert('Error deleting battery ID.');
+                    }
+                });
+            }
+        }
+        function manualEntry() {
+            console.debug("Manual Entry button clicked.");
+            const batteryId = prompt("Enter Battery ID:").trim();
+            if (batteryId) {
+                // Send to server
+                fetch('/add_manual_battery_entry', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ list_id: '{{ list.id }}', battery_id: batteryId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.debug("Response from add_manual_battery_entry:", data);
+                    if (data.status === 'success') {
+                        alert("Battery ID added successfully.");
+                        location.reload();
+                    } else if (data.status === 'duplicate') {
+                        alert("Battery ID already exists in the list.");
+                    } else {
+                        alert("Error adding Battery ID.");
+                    }
+                })
+                .catch(error => {
+                    console.debug("Error adding manual battery entry:", error);
+                    alert("Error adding Battery ID.");
+                });
+            }
+        }
+    </script>
+</body>
+</html>
