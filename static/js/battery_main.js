@@ -10,7 +10,16 @@ let zoomSlider = document.getElementById('zoom-slider');
 
 console.debug("Battery scanning variables initialized.");
 
-// Initialize QR Scanner
+// Define video constraints to adjust camera zoom and aspect ratio
+const videoConstraints = {
+    facingMode: 'environment',
+    // Adjust width and height to control camera view
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+    aspectRatio: { ideal: 16 / 9 }
+};
+
+// Initialize QR Scanner with adjusted video constraints
 const qrScanner = new QrScanner(
     video,
     result => {
@@ -23,6 +32,7 @@ const qrScanner = new QrScanner(
         preferredCamera: 'environment',
         highlightScanRegion: true,
         highlightCodeOutline: true,
+        videoConstraints: videoConstraints,
         calculateScanRegion: (video) => {
             // Use full video dimensions to reduce zoomed-in effect
             return {
