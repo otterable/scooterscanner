@@ -6,7 +6,7 @@
     <title>{{ list_name }} - Battery Scanning</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* Add any necessary CSS styles here */
+        /* Existing CSS styles */
         body {
             margin: 0;
             font-family: Arial, sans-serif;
@@ -99,6 +99,9 @@
         <ul id="battery-list"></ul>
         <p>Total Batteries: <span id="total-batteries">0</span></p>
     </div>
+
+    <!-- Audio Element for Scan Success Sound -->
+    <audio id="scan-success-sound" src="{{ url_for('static', filename='sound/scan_success.mp3') }}" preload="auto"></audio>
 
     <script>
         const sessionId = '{{ session_id }}';

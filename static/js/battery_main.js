@@ -7,13 +7,13 @@ let scannedBatteryIdDiv = document.getElementById('scanned-battery-id');
 let batteryList = document.getElementById('battery-list');
 let totalBatteriesSpan = document.getElementById('total-batteries');
 let zoomSlider = document.getElementById('zoom-slider');
+let scanSuccessSound = document.getElementById('scan-success-sound');
 
 console.debug("Battery scanning variables initialized.");
 
 // Define video constraints to adjust camera zoom and aspect ratio
 const videoConstraints = {
     facingMode: 'environment',
-    // Adjust width and height to control camera view
     width: { ideal: 1920 },
     height: { ideal: 1080 },
     aspectRatio: { ideal: 16 / 9 }
@@ -79,6 +79,9 @@ function processBatteryData(batteryId) {
     .then(data => {
         console.debug("Response from save_battery_scan:", data);
         if (data.status === 'success') {
+            // Play success sound
+            playSuccessSound();
+
             // Flash green overlay
             overlay.style.backgroundColor = 'green';
             overlay.style.opacity = '0.7';
@@ -113,6 +116,17 @@ function processBatteryData(batteryId) {
     .catch(error => {
         console.debug("Fetch error:", error);
     });
+}
+
+// Function to play success sound
+function playSuccessSound() {
+    // Check if the audio can be played (user interaction might be required)
+    if (scanSuccessSound) {
+        scanSuccessSound.currentTime = 0; // Reset audio to start
+        scanSuccessSound.play().catch(error => {
+            console.debug("Error playing success sound:", error);
+        });
+    }
 }
 
 // Finish list
@@ -186,7 +200,6 @@ async function setZoom(zoomLevel) {
     const track = video.srcObject.getVideoTracks()[0];
     const capabilities = track.getCapabilities();
     if (capabilities.zoom) {
-        const settings = track.getSettings();
         const min = capabilities.zoom.min || 1;
         const max = capabilities.zoom.max || 1;
         const newZoomLevel = Math.max(min, Math.min(zoomLevel, max));
