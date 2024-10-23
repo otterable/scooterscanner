@@ -6,7 +6,7 @@ let overlay = document.getElementById('overlay');
 let scannedBatteryIdDiv = document.getElementById('scanned-battery-id');
 let batteryList = document.getElementById('battery-list');
 let totalBatteriesSpan = document.getElementById('total-batteries');
-let isPaused = false;
+let zoomSlider = document.getElementById('zoom-slider');
 
 console.debug("Battery scanning variables initialized.");
 
@@ -24,13 +24,12 @@ const qrScanner = new QrScanner(
         highlightScanRegion: true,
         highlightCodeOutline: true,
         calculateScanRegion: (video) => {
-            const smallestDimension = Math.min(video.videoWidth, video.videoHeight);
-            const scanRegionSize = smallestDimension * 0.9;
+            // Use full video dimensions to reduce zoomed-in effect
             return {
-                x: (video.videoWidth - scanRegionSize) / 2,
-                y: (video.videoHeight - scanRegionSize) / 2,
-                width: scanRegionSize,
-                height: scanRegionSize,
+                x: 0,
+                y: 0,
+                width: video.videoWidth,
+                height: video.videoHeight,
             };
         }
     }
@@ -39,6 +38,8 @@ const qrScanner = new QrScanner(
 console.debug("Starting QR Scanner for battery scanning.");
 qrScanner.start().then(() => {
     console.debug("QR Scanner started successfully for battery scanning.");
+    // After starting, set initial zoom level
+    setupZoomSlider();
 }).catch(error => {
     console.debug("Error starting QR Scanner:", error);
 });
@@ -130,7 +131,8 @@ document.getElementById('manual-entry-btn').addEventListener('click', () => {
 function adjustCameraSize() {
     const availableHeight = window.innerHeight;
     const buttonContainerHeight = document.getElementById('button-container').offsetHeight;
-    const desiredCameraHeight = availableHeight - buttonContainerHeight;
+    const zoomContainerHeight = document.getElementById('zoom-container').offsetHeight || 0;
+    const desiredCameraHeight = availableHeight - buttonContainerHeight - zoomContainerHeight;
     document.getElementById('camera-container').style.height = desiredCameraHeight + 'px';
     console.debug("Camera size adjusted.");
 }
@@ -140,3 +142,72 @@ adjustCameraSize();
 
 // Handle window resize
 window.addEventListener('resize', adjustCameraSize);
+
+// Tap-to-focus functionality
+video.addEventListener('click', async (event) => {
+    console.debug('Video clicked for focus');
+    const rect = video.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    const track = video.srcObject.getVideoTracks()[0];
+    const capabilities = track.getCapabilities();
+    if (capabilities.focusMode && capabilities.focusMode.includes('single-shot')) {
+        await track.applyConstraints({
+            advanced: [{
+                focusMode: 'single-shot',
+                pointsOfInterest: [{ x: x / rect.width, y: y / rect.height }]
+            }]
+        });
+        console.debug('Focus triggered at point:', x, y);
+    } else {
+        console.debug('Focus is not supported by this device.');
+    }
+});
+
+// Zoom control
+zoomSlider.addEventListener('input', () => {
+    const zoomLevel = parseFloat(zoomSlider.value);
+    setZoom(zoomLevel);
+});
+
+// Function to set zoom level
+async function setZoom(zoomLevel) {
+    const track = video.srcObject.getVideoTracks()[0];
+    const capabilities = track.getCapabilities();
+    if (capabilities.zoom) {
+        const settings = track.getSettings();
+        const min = capabilities.zoom.min || 1;
+        const max = capabilities.zoom.max || 1;
+        const newZoomLevel = Math.max(min, Math.min(zoomLevel, max));
+        await track.applyConstraints({
+            advanced: [{ zoom: newZoomLevel }]
+        });
+        console.debug(`Zoom level set to ${newZoomLevel}`);
+    } else {
+        console.debug('Zoom is not supported by this device.');
+        document.getElementById('zoom-container').style.display = 'none'; // Hide zoom slider if not supported
+    }
+}
+
+// Adjust zoom slider range based on camera capabilities
+async function setupZoomSlider() {
+    const track = video.srcObject.getVideoTracks()[0];
+    const capabilities = track.getCapabilities();
+    if (capabilities.zoom) {
+        zoomSlider.min = capabilities.zoom.min;
+        zoomSlider.max = capabilities.zoom.max;
+        zoomSlider.step = capabilities.zoom.step || 0.1;
+        zoomSlider.value = capabilities.zoom.min;
+        console.debug('Zoom capabilities:', capabilities.zoom);
+    } else {
+        console.debug('Zoom is not supported by this device.');
+        document.getElementById('zoom-container').style.display = 'none'; // Hide zoom slider if not supported
+    }
+}
+
+// Wait until video stream is ready
+video.addEventListener('loadedmetadata', () => {
+    setupZoomSlider();
+    adjustCameraSize();
+});
